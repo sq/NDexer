@@ -23,8 +23,8 @@ namespace Ndexer {
 
             FilterTable = new DataTable("Filters");
             FolderTable = new DataTable("Folders");
-            FilterAdapter = new SQLiteDataAdapter("SELECT Filters_Pattern, Filters_Language FROM Filters", Tags.Connection);
-            FolderAdapter = new SQLiteDataAdapter("SELECT Folders_Path FROM Folders", Tags.Connection);
+            FilterAdapter = new SQLiteDataAdapter("SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters", Tags.Connection);
+            FolderAdapter = new SQLiteDataAdapter("SELECT Folders_ID, Folders_Path FROM Folders", Tags.Connection);
             FilterBuilder = new SQLiteCommandBuilder(FilterAdapter);
             FolderBuilder = new SQLiteCommandBuilder(FolderAdapter);
             FilterAdapter.Fill(FilterTable);

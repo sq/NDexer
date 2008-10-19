@@ -92,6 +92,15 @@ namespace Ndexer {
             );
         }
 
+        public void Compact () {
+            ExecuteSQL(
+                @"DELETE FROM TagContexts WHERE (" +
+                @"SELECT COUNT(*) FROM Tags WHERE " +
+                @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
+            );
+            ExecuteSQL("VACUUM");
+        }
+
         public IEnumerable<Filter> GetFilters () {
             using (var reader = _GetFilters.ExecuteReader()) {
                 while (reader.Read()) {
@@ -131,7 +140,6 @@ namespace Ndexer {
             int id = Convert.ToInt32(ExecuteQuery(_GetSourceFileID, filename));
             ExecuteQuery(_DeleteTagsForFile, id);
             ExecuteQuery(_DeleteSourceFile, id);
-            Console.WriteLine("Deleted file {0} from database.", filename);
         }
 
         public void DeleteTagsForFile (string filename) {
@@ -144,14 +152,12 @@ namespace Ndexer {
             if (id != 0) {
                 ExecuteQuery(_DeleteTagsForFile, id);
                 ExecuteQuery(_DeleteSourceFile, id);
-                Console.WriteLine("Deleted file {0} from database.", filename);
             } else {
                 if (!filename.EndsWith("\\"))
                     filename += "\\";
                 filename += "%";
                 ExecuteQuery(_DeleteTagsForFolder, filename);
                 ExecuteQuery(_DeleteSourceFilesForFolder, filename);
-                Console.WriteLine("Deleted folder {0} from database.", filename);
             }
         }
 
@@ -161,14 +167,24 @@ namespace Ndexer {
                 (from f in GetFilters() select f.Pattern).ToArray()
             );
 
+            var folders = (from f in GetFolders() select f.Path).ToArray();
+
             foreach (var file in GetSourceFiles()) {
-                if (!System.IO.File.Exists(file.Path))
+                bool validFolder = false;
+                foreach (var folder in folders) {
+                    if (file.Path.StartsWith(folder)) {
+                        validFolder = true;
+                        break;
+                    }
+                }
+
+                if (!validFolder || !System.IO.File.Exists(file.Path))
                     yield return new Change { Filename = file.Path, Deleted = true };
             }
 
-            foreach (var folder in GetFolders()) {
+            foreach (var folder in folders) {
                 foreach (var entry in Squared.Util.IO.EnumDirectoryEntries(
-                    folder.Path, filters, true, Squared.Util.IO.IsFile
+                    folder, filters, true, Squared.Util.IO.IsFile
                 )) {
                     long newTimestamp = entry.LastWritten;
                     long oldTimestamp = (long)(GetSourceFileTimestamp(entry.Name) ?? (long)0);

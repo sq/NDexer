@@ -156,7 +156,8 @@
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ConfigurationDialog";
-            this.Text = "Configuration";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.Text = "NDexer Configuration";
             this.gbFileTypes.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dgFilters)).EndInit();
             this.gbFolders.ResumeLayout(false);
