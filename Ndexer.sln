@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C# Express 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ndexer", "Ndexer.csproj", "{536F4E2B-A2C2-4E49-83A3-7CD5137B552E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TaskLib", "..\Fracture\Squared\TaskLib\TaskLib.csproj", "{173ABDCA-7278-46FF-A300-D3BF8CCEF181}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Util", "..\Fracture\Squared\Util\Util.csproj", "{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{536F4E2B-A2C2-4E49-83A3-7CD5137B552E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{536F4E2B-A2C2-4E49-83A3-7CD5137B552E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{536F4E2B-A2C2-4E49-83A3-7CD5137B552E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{536F4E2B-A2C2-4E49-83A3-7CD5137B552E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{173ABDCA-7278-46FF-A300-D3BF8CCEF181}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{173ABDCA-7278-46FF-A300-D3BF8CCEF181}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{173ABDCA-7278-46FF-A300-D3BF8CCEF181}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{173ABDCA-7278-46FF-A300-D3BF8CCEF181}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
