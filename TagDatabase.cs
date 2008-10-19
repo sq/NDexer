@@ -44,6 +44,8 @@ namespace Ndexer {
             _UpdateSourceFileTimestamp,
             _DeleteTagsForFile,
             _DeleteSourceFile,
+            _DeleteTagsForFolder,
+            _DeleteSourceFilesForFolder,
             _LastInsertID,
             _InsertTag;
 
@@ -74,6 +76,13 @@ namespace Ndexer {
             _UpdateSourceFileTimestamp = CompileQuery(@"INSERT OR REPLACE INTO SourceFiles (SourceFiles_Path, SourceFiles_Timestamp) VALUES (?, ?)");
             _DeleteTagsForFile = CompileQuery(@"DELETE FROM Tags WHERE SourceFiles_ID = ?");
             _DeleteSourceFile = CompileQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_ID = ?");
+            _DeleteTagsForFolder = CompileQuery(
+                @"DELETE FROM Tags WHERE " +
+                @"Tags.SourceFiles_ID IN ( " +
+                @"SELECT SourceFiles_ID FROM SourceFiles WHERE " +
+                @"SourceFiles.SourceFiles_Path LIKE ? )"
+            );
+            _DeleteSourceFilesForFolder = CompileQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_Path LIKE ?");
             _InsertTag = CompileQuery(
                 @"INSERT INTO Tags (" +
                 @"Tags_Name, SourceFiles_ID, Tags_LineNumber, TagKinds_ID, TagContexts_ID, TagLanguages_ID" +
@@ -122,11 +131,28 @@ namespace Ndexer {
             int id = Convert.ToInt32(ExecuteQuery(_GetSourceFileID, filename));
             ExecuteQuery(_DeleteTagsForFile, id);
             ExecuteQuery(_DeleteSourceFile, id);
+            Console.WriteLine("Deleted file {0} from database.", filename);
         }
 
         public void DeleteTagsForFile (string filename) {
             int id = Convert.ToInt32(ExecuteQuery(_GetSourceFileID, filename));
             ExecuteQuery(_DeleteTagsForFile, id);
+        }
+
+        public void DeleteSourceFileOrFolder (string filename) {
+            int id = Convert.ToInt32(ExecuteQuery(_GetSourceFileID, filename));
+            if (id != 0) {
+                ExecuteQuery(_DeleteTagsForFile, id);
+                ExecuteQuery(_DeleteSourceFile, id);
+                Console.WriteLine("Deleted file {0} from database.", filename);
+            } else {
+                if (!filename.EndsWith("\\"))
+                    filename += "\\";
+                filename += "%";
+                ExecuteQuery(_DeleteTagsForFolder, filename);
+                ExecuteQuery(_DeleteSourceFilesForFolder, filename);
+                Console.WriteLine("Deleted folder {0} from database.", filename);
+            }
         }
 
         public IEnumerable<Change> UpdateFileListAndGetChangeSet () {

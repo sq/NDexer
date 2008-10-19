@@ -26,13 +26,37 @@ namespace Ndexer {
                 monitor.Monitoring = true;
 
                 ShowConfiguration(db);
-                UpdateIndex(db);
+                UpdateIndex(db, ScanFiles(db));
+
+                var changedFiles = new List<string>();
+                var deletedFiles = new List<string>();
+                long lastDiskChange = 0;
+                long updateInterval = TimeSpan.FromSeconds(15).Ticks;
 
                 while (true) {
-                    foreach (string filename in monitor.GetChangedFiles().Distinct())
-                        Console.Out.WriteLine(filename);
-                    foreach (string filename in monitor.GetDeletedFiles().Distinct())
-                        Console.Out.WriteLine("{0} deleted", filename);
+                    long now = DateTime.Now.Ticks;
+                    if ((changedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
+                        UpdateIndex(db, changedFiles.ToArray());
+                        changedFiles.Clear();
+                    }
+                    if ((deletedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
+                        using (var trans = db.Connection.BeginTransaction()) {
+                            foreach (string filename in deletedFiles)
+                                db.DeleteSourceFileOrFolder(filename);
+                            trans.Commit();
+                        }
+                        deletedFiles.Clear();
+                    }
+
+                    now = DateTime.Now.Ticks;
+                    foreach (string filename in monitor.GetChangedFiles().Distinct()) {
+                        lastDiskChange = now;
+                        changedFiles.Add(filename);
+                    }
+                    foreach (string filename in monitor.GetDeletedFiles().Distinct()) {
+                        lastDiskChange = now;
+                        deletedFiles.Add(filename);
+                    }
 
                     Application.DoEvents();
                     System.Threading.Thread.Sleep(1);
@@ -49,7 +73,7 @@ namespace Ndexer {
             Application.Run(new ConfigurationDialog(db));
         }
 
-        public static void UpdateIndex (TagDatabase db) {
+        public static string[] ScanFiles (TagDatabase db) {
             var status = new IndexingStatusDialog();
             status.Show();
             status.SetStatus("Scanning files...", -1);
@@ -67,32 +91,39 @@ namespace Ndexer {
                 trans.Commit();
             }
 
-            string[] sf = new string[Math.Min(50, sourceFiles.Count)];
-            sourceFiles.CopyTo(0, sf, 0, Math.Min(50, sourceFiles.Count));
-            Console.WriteLine("{0} file(s): {1}", sourceFiles.Count, String.Join(",", sf));
+            status.Hide();
+            status.Dispose();
 
-            if (sourceFiles.Count > 0) {
-                status.SetStatus("Updating index...", -1);
+            return sourceFiles.ToArray();
+        }
 
-                using (var trans = db.Connection.BeginTransaction()) {
-                    foreach (string filename in sourceFiles) {
-                        db.DeleteTagsForFile(filename);
-                        db.UpdateSourceFileTimestamp(filename, System.IO.File.GetLastWriteTime(filename).ToFileTime());
-                    }
+        public static void UpdateIndex (TagDatabase db, string[] sourceFiles) {
+            if (sourceFiles.Length == 0)
+                return;
 
-                    var gen = new TagGenerator(
-                        @"C:\program files\ctags57\ctags.exe",
-                        "--filter=yes --filter-terminator=[[<>]]\n --fields=+afmikKlnsStz --sort=no"
-                    );
-                    var inputLines = gen.GenerateTags(sourceFiles, sourceFiles.Count, status);
-                    foreach (Tag tag in TagReader.ReadTags(inputLines)) {
-                        db.AddTag(tag);
-                        if (!status.Visible)
-                            break;
-                    }
+            var status = new IndexingStatusDialog();
+            status.Show();
+            status.SetStatus("Updating index...", -1);
 
-                    trans.Commit();
+            using (var trans = db.Connection.BeginTransaction()) {
+                foreach (string filename in sourceFiles) {
+                    db.DeleteTagsForFile(filename);
+                    db.UpdateSourceFileTimestamp(filename, System.IO.File.GetLastWriteTime(filename).ToFileTime());
                 }
+
+                var gen = new TagGenerator(
+                    @"C:\program files\ctags57\ctags.exe",
+                    "--filter=yes --filter-terminator=[[<>]]\n --fields=+afmikKlnsStz --sort=no"
+                );
+
+                var inputLines = gen.GenerateTags(sourceFiles, sourceFiles.Length, status);
+                foreach (Tag tag in TagReader.ReadTags(inputLines)) {
+                    db.AddTag(tag);
+                    if (!status.Visible)
+                        break;
+                }
+
+                trans.Commit();
             }
 
             status.Hide();
