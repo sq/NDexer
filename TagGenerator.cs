@@ -24,6 +24,7 @@ namespace Ndexer {
             info.CreateNoWindow = true;
             info.WindowStyle = ProcessWindowStyle.Hidden;
             var process = Process.Start(info);
+            process.PriorityClass = Process.GetCurrentProcess().PriorityClass;
             try {
                 var outputAdapter = new StreamDataAdapter(process.StandardOutput.BaseStream, false);
                 var inputAdapter = new StreamDataAdapter(process.StandardInput.BaseStream, false);
@@ -68,8 +69,9 @@ namespace Ndexer {
                     if (currentLine != null) {
                         if (currentLine == "[[<>]]") {
                             currentFile += 1;
+                        } else {
+                            yield return currentLine;
                         }
-                        yield return currentLine;
                     }
                     while (!f.Completed)
                         Thread.Sleep(0);

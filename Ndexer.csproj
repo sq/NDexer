@@ -114,9 +114,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="icons\database_monitoring.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="icons\database_monitoring.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

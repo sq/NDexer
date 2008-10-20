@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Visual C++"
+	Version="9.00"
+	Name="ctags"
+	ProjectGUID="{C701E43D-C954-40E7-8780-6841B40BEED9}"
+	RootNamespace="ctags"
+	Keyword="Win32Proj"
+	TargetFrameworkVersion="196613"
+	>
+	<Platforms>
+		<Platform
+			Name="Win32"
+		/>
+	</Platforms>
+	<ToolFiles>
+	</ToolFiles>
+	<Configurations>
+		<Configuration
+			Name="Debug|Win32"
+			OutputDirectory="$(SolutionDir)\..\"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="gnu_regex"
+				PreprocessorDefinitions="REGEX_MALLOC;HAVE_REGCOMP;WIN32;_DEBUG;_CONSOLE;STDC_HEADERS=1"
+				MinimalRebuild="true"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="3"
+				DefaultCharIsUnsigned="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="4"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkIncremental="2"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(SolutionDir)\..\"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="1"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
+				AdditionalIncludeDirectories="gnu_regex"
+				PreprocessorDefinitions="REGEX_MALLOC;HAVE_REGCOMP;WIN32;NDEBUG;_CONSOLE;;STDC_HEADERS=1"
+				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
+				DefaultCharIsUnsigned="true"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				LinkIncremental="1"
+				GenerateDebugInformation="true"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+	</Configurations>
+	<References>
+	</References>
+	<Files>
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+			>
+			<File
+				RelativePath="H:\program files\ctags57\args.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\asm.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\asp.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\awk.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\basic.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\beta.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\c.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\cobol.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\debug.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\eiffel.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\entry.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\erlang.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\fortran.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\get.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\html.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\jscript.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\keyword.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\lisp.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\lregex.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\lua.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\main.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\make.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\options.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\parse.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\pascal.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\perl.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\php.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\python.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\read.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\readtags.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\gnu_regex\regex.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\rexx.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\routines.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\ruby.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\scheme.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\sh.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\slang.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\sml.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\sort.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\sql.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\strlist.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\tcl.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\verilog.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\vhdl.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\vim.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\vstring.c"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\yacc.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl;inc;xsd"
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+			>
+			<File
+				RelativePath="H:\program files\ctags57\acconfig.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\args.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\ctags.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\debug.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\e_amiga.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\e_djgpp.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\e_mac.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\e_msoft.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\e_os2.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\e_qdos.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\e_riscos.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\e_vms.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\entry.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\general.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\get.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\keyword.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\main.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\options.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\parse.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\parsers.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\read.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\readtags.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\gnu_regex\regex.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\regex.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\routines.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\sort.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\strlist.h"
+				>
+			</File>
+			<File
+				RelativePath="H:\program files\ctags57\vstring.h"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Resource Files"
+			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
+			>
+		</Filter>
+	</Files>
+	<Globals>
+	</Globals>
+</VisualStudioProject>

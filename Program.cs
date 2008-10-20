@@ -7,6 +7,7 @@ using System.Data;
 using System.Data.SQLite;
 using Squared.Task;
 using System.Drawing;
+using System.Diagnostics;
 
 namespace Ndexer {
     static class Program {
@@ -32,51 +33,7 @@ namespace Ndexer {
                 }
 
                 if (argv.Contains("--monitor")) {
-                    Icon trayIcon = Icon.FromHandle(Properties.Resources.database_monitoring.GetHicon());
-                    NotifyIcon notifyIcon = new NotifyIcon();
-                    notifyIcon.Icon = trayIcon;
-                    notifyIcon.Text = "NDexer (Monitoring)";
-                    notifyIcon.Visible = true;
-
-                    DiskMonitor monitor = new DiskMonitor(
-                        (from f in db.GetFolders() select f.Path).ToArray(),
-                        (from f in db.GetFilters() select f.Pattern).ToArray()
-                    );
-                    monitor.Monitoring = true;
-
-                    var changedFiles = new List<string>();
-                    var deletedFiles = new List<string>();
-                    long lastDiskChange = 0;
-                    long updateInterval = TimeSpan.FromSeconds(15).Ticks;
-
-                    while (true) {
-                        long now = DateTime.Now.Ticks;
-                        if ((changedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
-                            UpdateIndex(db, changedFiles.ToArray());
-                            changedFiles.Clear();
-                        }
-                        if ((deletedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
-                            using (var trans = db.Connection.BeginTransaction()) {
-                                foreach (string filename in deletedFiles)
-                                    db.DeleteSourceFileOrFolder(filename);
-                                trans.Commit();
-                            }
-                            deletedFiles.Clear();
-                        }
-
-                        now = DateTime.Now.Ticks;
-                        foreach (string filename in monitor.GetChangedFiles().Distinct()) {
-                            lastDiskChange = now;
-                            changedFiles.Add(filename);
-                        }
-                        foreach (string filename in monitor.GetDeletedFiles().Distinct()) {
-                            lastDiskChange = now;
-                            deletedFiles.Add(filename);
-                        }
-
-                        Application.DoEvents();
-                        System.Threading.Thread.Sleep(1);
-                    }
+                    MonitorForChanges(db);
                 }
             }
         }
@@ -150,6 +107,56 @@ namespace Ndexer {
 
             status.Hide();
             status.Dispose();
+        }
+
+        public static void MonitorForChanges (TagDatabase db) {
+            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal;
+
+            Icon trayIcon = Icon.FromHandle(Properties.Resources.database_monitoring.GetHicon());
+            NotifyIcon notifyIcon = new NotifyIcon();
+            notifyIcon.Icon = trayIcon;
+            notifyIcon.Text = "NDexer (Monitoring)";
+            notifyIcon.Visible = true;
+
+            DiskMonitor monitor = new DiskMonitor(
+                (from f in db.GetFolders() select f.Path).ToArray(),
+                (from f in db.GetFilters() select f.Pattern).ToArray()
+            );
+            monitor.Monitoring = true;
+
+            var changedFiles = new List<string>();
+            var deletedFiles = new List<string>();
+            long lastDiskChange = 0;
+            long updateInterval = TimeSpan.FromSeconds(15).Ticks;
+
+            while (true) {
+                long now = DateTime.Now.Ticks;
+                if ((changedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
+                    UpdateIndex(db, changedFiles.ToArray());
+                    changedFiles.Clear();
+                }
+                if ((deletedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
+                    using (var trans = db.Connection.BeginTransaction()) {
+                        foreach (string filename in deletedFiles)
+                            db.DeleteSourceFileOrFolder(filename);
+                        trans.Commit();
+                    }
+                    deletedFiles.Clear();
+                }
+
+                now = DateTime.Now.Ticks;
+                foreach (string filename in monitor.GetChangedFiles().Distinct()) {
+                    lastDiskChange = now;
+                    changedFiles.Add(filename);
+                }
+                foreach (string filename in monitor.GetDeletedFiles().Distinct()) {
+                    lastDiskChange = now;
+                    deletedFiles.Add(filename);
+                }
+
+                Application.DoEvents();
+                System.Threading.Thread.Sleep(500);
+            }
         }
     }
 }
