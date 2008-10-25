@@ -46,6 +46,28 @@ namespace Ndexer {
             Arguments = arguments;
         }
 
+        internal IEnumerator<object> WriteFilenames (BlockingQueue<string> sourceFilenames, Func<string, Future> onNextFile, Func<string, Future> writeLine) {
+            Future pendingLine = null;
+            Interlocked.Increment(ref Program.NumWorkers);
+            while (true) {
+                string filename = null;
+                {
+                    Interlocked.Decrement(ref Program.NumWorkers);
+                    var f = sourceFilenames.Dequeue();
+                    yield return f;
+                    Interlocked.Increment(ref Program.NumWorkers);
+                    filename = (string)f.Result;
+                }
+
+                yield return onNextFile(filename);
+
+                if (pendingLine != null)
+                    yield return pendingLine;
+
+                pendingLine = writeLine(filename);
+            }
+        }
+
         public IEnumerator<object> GenerateTags (BlockingQueue<string> sourceFilenames, BlockingQueue<string> outputLines, Func<string, Future> onNextFile) {
             var info = new ProcessStartInfo(ApplicationPath, Arguments);
             info.UseShellExecute = false;
@@ -54,36 +76,43 @@ namespace Ndexer {
             info.CreateNoWindow = true;
             info.WindowStyle = ProcessWindowStyle.Hidden;
 
-            using (var process = new ChildProcess(Process.Start(info)))
+            var _process = Process.Start(info);
+            using (var process = new ChildProcess(_process))
             using (var outputAdapter = new StreamDataAdapter(process.StandardOutput, false))
             using (var inputAdapter = new StreamDataAdapter(process.StandardInput, false))
             using (var stdout = new AsyncTextReader(outputAdapter, Encoding.ASCII))
             using (var stdin = new AsyncTextWriter(inputAdapter, Encoding.ASCII)) {
-                while (true) {
-                    string filename = null;
-                    {
-                        var f = sourceFilenames.Dequeue();
-                        yield return f;
-                        filename = (string)f.Result;
+                var writeLine = (Func<string, Future>)(
+                    (fn) => {
+                        return Future.RunInThread(
+                            (Action<string>)(
+                                (fn_) => {
+                                    _process.StandardInput.WriteLine(fn_);
+                                    process.StandardInput.Flush();
+                                }
+                            ),
+                            fn
+                        );
                     }
+                );
 
-                    Console.WriteLine(filename);
+                Program.Scheduler.Start(
+                    WriteFilenames(sourceFilenames, onNextFile, writeLine),
+                    TaskExecutionPolicy.RunAsBackgroundTask
+                );
 
-                    yield return onNextFile(filename);
+                Interlocked.Increment(ref Program.NumWorkers);
+                while (true) {
+                    Interlocked.Decrement(ref Program.NumWorkers);
+                    var f = stdout.ReadLine();
+                    yield return f;
+                    string currentLine = f.Result as string;
+                    Interlocked.Increment(ref Program.NumWorkers);
 
-                    yield return stdin.WriteLine(filename);
-                    process.StandardInput.Flush();
-
-                    while (true) {
-                        var f = stdout.ReadLine();
-                        yield return f;
-                        string currentLine = f.Result as string;
-
-                        if ((currentLine == null) || (currentLine == "[[<>]]")) {
-                            break;
-                        } else {
-                            outputLines.Enqueue(currentLine);
-                        }
+                    if (currentLine == null) {
+                        break;
+                    } else {
+                        outputLines.Enqueue(currentLine);
                     }
                 }
             }
