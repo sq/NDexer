@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using Squared.Task;
 
 namespace Ndexer {
     public struct Tag {
@@ -41,13 +42,16 @@ namespace Ndexer {
     }
 
     public static class TagReader {
-        public static IEnumerable<Tag> ReadTags (IEnumerator<string> inputLines) {
+        public static IEnumerator<object> ReadTags (BlockingQueue<string> inputLines, BlockingQueue<Tag> outputTags) {
             var sep = new char[] { '\t' };
             var header = "\t/^";
             var sentinel = ";\"\t";
-            while (inputLines.MoveNext()) {
-                string line = inputLines.Current;
-                Tag current = new Tag();
+
+            while (true) {
+                var f = inputLines.Dequeue();
+                yield return f;
+                string line = (string)f.Result;
+
                 int startPos = line.LastIndexOf(sentinel);
                 int nextPos = line.IndexOf('\t');
                 int splitPos = line.IndexOf(header);
@@ -55,17 +59,23 @@ namespace Ndexer {
                     splitPos = startPos;
                 if (startPos == -1)
                     continue;
-                startPos += sentinel.Length;
+
+                Tag current = new Tag();
                 current.Name = line.Substring(0, nextPos);
+
+                startPos += sentinel.Length;
                 int sourceFileLength = (splitPos - nextPos) - 1;
                 int extraTabPos = line.IndexOf('\t', nextPos + 1);
                 if (extraTabPos < splitPos)
                     sourceFileLength = (extraTabPos - nextPos) - 1;
+
                 current.SourceFile = line.Substring(nextPos + 1, sourceFileLength);
+
                 while (startPos > 0) {
                     nextPos = line.IndexOf('\t', startPos) + 1;
                     if (nextPos < startPos)
                         nextPos = line.Length + 1;
+
                     splitPos = line.IndexOf(':', startPos);
                     if (splitPos < nextPos) {
                         string key = line.Substring(startPos, splitPos - startPos);
@@ -87,12 +97,14 @@ namespace Ndexer {
                                 break;
                         }
                     }
+
                     if (nextPos < line.Length)
                         startPos = nextPos;
                     else
                         break;
                 }
-                yield return current;
+
+                outputTags.Enqueue(current);
             }
         }
     }

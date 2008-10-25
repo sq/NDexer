@@ -7,6 +7,36 @@ using Squared.Task;
 using System.Threading;
 
 namespace Ndexer {
+    internal struct ChildProcess : IDisposable {
+        public Process Process;
+
+        public ChildProcess (Process process) {
+            Process = process;
+            Process.PriorityClass = Process.GetCurrentProcess().PriorityClass;
+        }
+
+        public System.IO.Stream StandardInput {
+            get {
+                return Process.StandardInput.BaseStream;
+            }
+        }
+
+        public System.IO.Stream StandardOutput {
+            get {
+                return Process.StandardOutput.BaseStream;
+            }
+        }   
+
+        public void Dispose () {
+            if (!Process.HasExited) {
+                Process.StandardInput.BaseStream.Close();
+                Process.WaitForExit(500);
+            }
+            if (!Process.HasExited)
+                Process.Kill();
+        }
+    }
+    
     public class TagGenerator {
         public string ApplicationPath;
         public string Arguments;
@@ -16,83 +46,47 @@ namespace Ndexer {
             Arguments = arguments;
         }
 
-        public IEnumerator<string> GenerateTags (IEnumerable<string> sourceFilenames, int numFiles, IndexingStatusDialog statusDialog) {
+        public IEnumerator<object> GenerateTags (BlockingQueue<string> sourceFilenames, BlockingQueue<string> outputLines, Func<string, Future> onNextFile) {
             var info = new ProcessStartInfo(ApplicationPath, Arguments);
             info.UseShellExecute = false;
             info.RedirectStandardOutput = true;
             info.RedirectStandardInput = true;
             info.CreateNoWindow = true;
             info.WindowStyle = ProcessWindowStyle.Hidden;
-            var process = Process.Start(info);
-            process.PriorityClass = Process.GetCurrentProcess().PriorityClass;
-            try {
-                var outputAdapter = new StreamDataAdapter(process.StandardOutput.BaseStream, false);
-                var inputAdapter = new StreamDataAdapter(process.StandardInput.BaseStream, false);
-                var stdout = new AsyncTextReader(outputAdapter, Encoding.ASCII);
-                var stdin = new AsyncTextWriter(inputAdapter, Encoding.ASCII);
 
-                int currentFile = 0;
-
-                var enumerator = sourceFilenames.GetEnumerator();
-
-                OnComplete[] oc = new OnComplete[1];
-                OnComplete filenameWriter = (f, r, e) => {
-                    if (enumerator.MoveNext()) {
-                        process.StandardInput.BaseStream.Flush();
-                        string filename = enumerator.Current;
-                        ThreadPool.QueueUserWorkItem((_) => {
-                            var nextFuture = stdin.WriteLine(filename);
-                            nextFuture.RegisterOnComplete(oc[0]);
-                        });
-                    } else {
-                        process.StandardInput.BaseStream.Close();
-                    }
-                };
-                oc[0] = filenameWriter;
-                filenameWriter(null, null, null);
-
-                long lastUpdate = DateTime.Now.Ticks;
-                long updateStep = TimeSpan.FromSeconds(0.1).Ticks;
-
-                string currentLine = null;
+            using (var process = new ChildProcess(Process.Start(info)))
+            using (var outputAdapter = new StreamDataAdapter(process.StandardOutput, false))
+            using (var inputAdapter = new StreamDataAdapter(process.StandardInput, false))
+            using (var stdout = new AsyncTextReader(outputAdapter, Encoding.ASCII))
+            using (var stdin = new AsyncTextWriter(inputAdapter, Encoding.ASCII)) {
                 while (true) {
-                    long now = DateTime.Now.Ticks;
-                    if ((now - lastUpdate) > updateStep) {
-                        lastUpdate = now;
-                        float progressValue = currentFile / (float)numFiles;
-                        statusDialog.SetStatus(
-                            String.Format("Updating index... {0}/{1}", currentFile, numFiles),
-                            progressValue
-                        );
+                    string filename = null;
+                    {
+                        var f = sourceFilenames.Dequeue();
+                        yield return f;
+                        filename = (string)f.Result;
                     }
-                    var f = stdout.ReadLine();
-                    if (currentLine != null) {
-                        if (currentLine == "[[<>]]") {
-                            currentFile += 1;
+
+                    Console.WriteLine(filename);
+
+                    yield return onNextFile(filename);
+
+                    yield return stdin.WriteLine(filename);
+                    process.StandardInput.Flush();
+
+                    while (true) {
+                        var f = stdout.ReadLine();
+                        yield return f;
+                        string currentLine = f.Result as string;
+
+                        if ((currentLine == null) || (currentLine == "[[<>]]")) {
+                            break;
                         } else {
-                            yield return currentLine;
+                            outputLines.Enqueue(currentLine);
                         }
                     }
-                    while (!f.Completed)
-                        Thread.Sleep(0);
-                    currentLine = f.Result as string;
-                    if (currentLine == null)
-                        break;
-                }
-            } finally {
-                if (!process.HasExited) {
-                    process.WaitForExit(1000);
-                    process.Kill();
                 }
             }
-        }
-
-        void process_ErrorDataReceived (object sender, DataReceivedEventArgs e) {
-            Console.WriteLine("Error: {0}", e.Data);
-        }
-
-        void process_OutputDataReceived (object sender, DataReceivedEventArgs e) {
-            Console.WriteLine("Output: {0}", e.Data);
         }
     }
 }
