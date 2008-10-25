@@ -93,11 +93,14 @@ namespace Ndexer {
         }
 
         public void Compact () {
-            ExecuteSQL(
-                @"DELETE FROM TagContexts WHERE (" +
-                @"SELECT COUNT(*) FROM Tags WHERE " +
-                @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
-            );
+            using (var trans = Connection.BeginTransaction()) {
+                ExecuteSQL(
+                    @"DELETE FROM TagContexts WHERE (" +
+                    @"SELECT COUNT(*) FROM Tags WHERE " +
+                    @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
+                );
+                trans.Commit();
+            }
             ExecuteSQL("VACUUM");
         }
 

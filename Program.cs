@@ -79,38 +79,15 @@ namespace Ndexer {
                     ShowConfiguration(db);
                 }
 
-                if (argv.Contains("--search")) {
-                    ShowSearch(db);
-                } else {
-                    db.Compact();
+                Scheduler.Start(
+                    RefreshTrayIcon(),
+                    TaskExecutionPolicy.RunAsBackgroundTask
+                );
 
-                    Scheduler.Start(
-                        TransactionPump(db),
-                        TaskExecutionPolicy.RunAsBackgroundTask
-                    );
-
-                    var sourceFiles = new BlockingQueue<string>();
-
-                    Scheduler.Start(
-                        RefreshTrayIcon(),
-                        TaskExecutionPolicy.RunAsBackgroundTask
-                    );
-
-                    Scheduler.Start(
-                        MonitorForChanges(db, sourceFiles),
-                        TaskExecutionPolicy.RunAsBackgroundTask
-                    );
-
-                    Scheduler.Start(
-                        ScanFiles(db, sourceFiles),
-                        TaskExecutionPolicy.RunAsBackgroundTask
-                    );
-
-                    Scheduler.Start(
-                        UpdateIndex(db, sourceFiles),
-                        TaskExecutionPolicy.RunAsBackgroundTask
-                    );
-                }
+                Scheduler.Start(
+                    MainTask(db),
+                    TaskExecutionPolicy.RunAsBackgroundTask
+                );
 
                 Application.Run();
             }
@@ -128,6 +105,40 @@ namespace Ndexer {
 
         public static void ShowConfiguration (TagDatabase db) {
             Application.Run(new ConfigurationDialog(db));
+        }
+
+        public static void CompactDatabase (TagDatabase db) {
+            Interlocked.Increment(ref NumWorkers);
+            db.Compact();
+            Interlocked.Decrement(ref NumWorkers);
+        }
+
+        public static IEnumerator<object> MainTask (TagDatabase db) {
+            yield return Future.RunInThread(
+                (Action<TagDatabase>)CompactDatabase, db
+            );
+
+            Scheduler.Start(
+                TransactionPump(db),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
+
+            var sourceFiles = new BlockingQueue<string>();
+
+            Scheduler.Start(
+                MonitorForChanges(db, sourceFiles),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
+
+            Scheduler.Start(
+                ScanFiles(db, sourceFiles),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
+
+            Scheduler.Start(
+                UpdateIndex(db, sourceFiles),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
         }
 
         public static IEnumerator<object> TransactionPump (TagDatabase db) {
