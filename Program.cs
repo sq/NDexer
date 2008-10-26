@@ -208,7 +208,6 @@ namespace Ndexer {
                         (Action<string>)(
                             (fn) => {
                                 db.DeleteSourceFile(fn);
-                                Console.WriteLine("- {0}", fn);
                             }
                         ),
                         change.Filename
@@ -229,9 +228,12 @@ namespace Ndexer {
             var onNextFile = (Func<string, Future>)(
                 (fn) => {
                     var lastWriteTime = System.IO.File.GetLastWriteTime(fn).ToFileTime();
-                    db.DeleteTagsForFile(fn);
-                    db.UpdateSourceFileTimestamp(fn, lastWriteTime);
-                    return new Future(null);
+                    return Future.RunInThread(
+                        (Action)(() => {
+                            db.DeleteTagsForFile(fn);
+                            db.UpdateSourceFileTimestamp(fn, lastWriteTime);
+                        })
+                    );
                 }
             );
 
@@ -262,9 +264,20 @@ namespace Ndexer {
                 var tag = (Tag)f.Result;
                 if (tag.SourceFile != lastSourceFile) {
                     lastSourceFile = tag.SourceFile;
-                    Console.WriteLine(tag.SourceFile);
                 }
-                db.AddTag(tag);
+
+                yield return Future.RunInThread(
+                    (Func<Tag, int>)db.AddTag,
+                    tag
+                );
+            }
+        }
+
+        public static IEnumerator<object> DeleteSourceFiles (TagDatabase db, string[] filenames) {
+            foreach (string filename in filenames) {
+                yield return Future.RunInThread(
+                    (Action<string>)db.DeleteSourceFileOrFolder, filename
+                );
             }
         }
 
@@ -286,18 +299,17 @@ namespace Ndexer {
                 Interlocked.Increment(ref NumWorkers);
                 long now = DateTime.Now.Ticks;
                 if ((changedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
-                    foreach (string filename in changedFiles) {
+                    foreach (string filename in changedFiles)
                         sourceFiles.Enqueue(filename);
-                        yield return new Yield();
-                    }
                     changedFiles.Clear();
                 }
                 if ((deletedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
-                    foreach (string filename in deletedFiles) {
-                        db.DeleteSourceFileOrFolder(filename);
-                        yield return new Yield();
-                    }
+                    string[] filenames = deletedFiles.ToArray();
                     deletedFiles.Clear();
+                    Scheduler.Start(
+                        DeleteSourceFiles(db, filenames),
+                        TaskExecutionPolicy.RunAsBackgroundTask
+                    );
                 }
 
                 now = DateTime.Now.Ticks;
