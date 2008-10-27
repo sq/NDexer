@@ -11,11 +11,15 @@ namespace Ndexer {
         private Queue<string> _DeletedFiles = new Queue<string>();
         private FileSystemWatcher[] _Watchers;
         private Regex[] _Filters;
+        private Regex[] _Exclusions;
         private bool _Monitoring = false;
 
         public DiskMonitor (string[] folders, string[] filters) {
             _Watchers = (from f in folders select CreateWatcher(f)).ToArray();
             _Filters = (from f in filters select CompileFilter(f)).ToArray();
+            _Exclusions = new Regex[1] {
+                new Regex(Regex.Escape(@"\.svn\"), RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture)
+            };
         }
 
         public bool Monitoring {
@@ -87,6 +91,17 @@ namespace Ndexer {
                         yield break;
                 }
 
+                bool excluded = false;
+                foreach (var exclusion in _Exclusions) {
+                    if (exclusion.IsMatch(item)) {
+                        excluded = true;
+                        break;
+                    }
+                }
+
+                if (excluded)
+                    continue;
+
                 bool filtered = true;
                 foreach (var filter in _Filters) {
                     if (filter.IsMatch(item)) {
@@ -109,6 +124,17 @@ namespace Ndexer {
                     else
                         yield break;
                 }
+
+                bool excluded = false;
+                foreach (var exclusion in _Exclusions) {
+                    if (exclusion.IsMatch(item)) {
+                        excluded = true;
+                        break;
+                    }
+                }
+
+                if (excluded)
+                    continue;
 
                 yield return item;
             }

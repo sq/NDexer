@@ -206,6 +206,8 @@ namespace Ndexer {
         }
 
         public static IEnumerator<object> ScanFiles (TagDatabase db, BlockingQueue<string> sourceFiles) {
+            Interlocked.Increment(ref NumWorkers);
+
             var changeSet = new TaskIterator<TagDatabase.Change>(
                 db.UpdateFileListAndGetChangeSet()
             );
@@ -214,8 +216,6 @@ namespace Ndexer {
             int numChanges = 0;
             int numDeletes = 0;
             while (!changeSet.Disposed) {
-                Interlocked.Increment(ref NumWorkers);
-
                 var change = changeSet.Current;
                 if (change.Deleted) {
                     yield return db.DeleteSourceFile(change.Filename);
@@ -226,10 +226,10 @@ namespace Ndexer {
                     numChanges += 1;
                 }
 
-                Interlocked.Decrement(ref NumWorkers);
-
                 yield return changeSet.MoveNext();
             }
+
+            Interlocked.Decrement(ref NumWorkers);
 
             Console.WriteLine("Disk scan complete. {0} change(s), {1} delete(s).", numChanges, numDeletes);
         }
@@ -322,6 +322,7 @@ namespace Ndexer {
                     foreach (string filename in changedFiles)
                         sourceFiles.Enqueue(filename);
                     changedFiles.Clear();
+                    Console.WriteLine("Index update complete.");
                 }
                 if ((deletedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
                     string[] filenames = deletedFiles.ToArray();
