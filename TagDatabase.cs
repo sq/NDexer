@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Data.SQLite;
+using Squared.Task;
+using System.Data;
 
 namespace Ndexer {
     public class TagDatabase : IDisposable {
         public struct Filter {
-            public int ID;
+            public long ID;
             public string Pattern;
             public string Language;
         }
@@ -18,17 +20,17 @@ namespace Ndexer {
         }
 
         public struct Folder {
-            public int ID;
+            public long ID;
             public string Path;
         }
 
         public struct SourceFile {
-            public int ID;
+            public long ID;
             public string Path;
             public long Timestamp;
         }
 
-        private SQLiteCommand
+        private Query
             _GetContextID,
             _GetKindID,
             _GetLanguageID,
@@ -41,7 +43,6 @@ namespace Ndexer {
             _MakeKindID,
             _MakeLanguageID,
             _MakeSourceFileID,
-            _UpdateSourceFileTimestamp,
             _DeleteTagsForFile,
             _DeleteSourceFile,
             _DeleteTagsForFolder,
@@ -50,129 +51,200 @@ namespace Ndexer {
             _InsertTag;
 
         public SQLiteConnection Connection;
+        public QueryManager QueryManager;
 
         public TagDatabase (string filename) {
             string connectionString = String.Format("Data Source={0}", filename);
             Connection = new SQLiteConnection(connectionString);
             Connection.Open();
+            QueryManager = new QueryManager(Connection);
 
             CompileQueries();
         }
 
         private void CompileQueries () {
-            _GetContextID = CompileQuery(@"SELECT TagContexts_ID FROM TagContexts WHERE TagContexts_Text = ?");
-            _GetKindID = CompileQuery(@"SELECT TagKinds_ID FROM TagKinds WHERE TagKinds_Name = ?");
-            _GetLanguageID = CompileQuery(@"SELECT TagLanguages_ID FROM TagLanguages WHERE TagLanguages_Name = ?");
-            _GetSourceFileID = CompileQuery(@"SELECT SourceFiles_ID FROM SourceFiles WHERE SourceFiles_Path = ?");
-            _GetSourceFileTimestamp = CompileQuery(@"SELECT SourceFiles_Timestamp FROM SourceFiles WHERE SourceFiles_Path = ?");
-            _GetFilters = CompileQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters");
-            _GetFolders = CompileQuery(@"SELECT Folders_ID, Folders_Path FROM Folders");
-            _GetSourceFiles = CompileQuery(@"SELECT SourceFiles_ID, SourceFiles_Path, SourceFiles_Timestamp FROM SourceFiles");
-            _LastInsertID = CompileQuery(@"SELECT last_insert_rowid()");
-            _MakeContextID = CompileQuery(@"INSERT INTO TagContexts (TagContexts_Text) VALUES (?)");
-            _MakeKindID = CompileQuery(@"INSERT INTO TagKinds (TagKinds_Name) VALUES (?)");
-            _MakeLanguageID = CompileQuery(@"INSERT INTO TagLanguages (TagLanguages_Name) VALUES (?)");
-            _MakeSourceFileID = CompileQuery(@"INSERT INTO SourceFiles (SourceFiles_Path, SourceFiles_Timestamp) VALUES (?, ?)");
-            _UpdateSourceFileTimestamp = CompileQuery(@"INSERT OR REPLACE INTO SourceFiles (SourceFiles_Path, SourceFiles_Timestamp) VALUES (?, ?)");
-            _DeleteTagsForFile = CompileQuery(@"DELETE FROM Tags WHERE SourceFiles_ID = ?");
-            _DeleteSourceFile = CompileQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_ID = ?");
-            _DeleteTagsForFolder = CompileQuery(
+            _GetContextID = QueryManager.BuildQuery(@"SELECT TagContexts_ID FROM TagContexts WHERE TagContexts_Text = ?");
+            _GetKindID = QueryManager.BuildQuery(@"SELECT TagKinds_ID FROM TagKinds WHERE TagKinds_Name = ?");
+            _GetLanguageID = QueryManager.BuildQuery(@"SELECT TagLanguages_ID FROM TagLanguages WHERE TagLanguages_Name = ?");
+            _GetSourceFileID = QueryManager.BuildQuery(@"SELECT SourceFiles_ID FROM SourceFiles WHERE SourceFiles_Path = ?");
+            _GetSourceFileTimestamp = QueryManager.BuildQuery(@"SELECT SourceFiles_Timestamp FROM SourceFiles WHERE SourceFiles_Path = ?");
+            _GetFilters = QueryManager.BuildQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters");
+            _GetFolders = QueryManager.BuildQuery(@"SELECT Folders_ID, Folders_Path FROM Folders");
+            _GetSourceFiles = QueryManager.BuildQuery(@"SELECT SourceFiles_ID, SourceFiles_Path, SourceFiles_Timestamp FROM SourceFiles");
+            _LastInsertID = QueryManager.BuildQuery(@"SELECT last_insert_rowid()");
+            _MakeContextID = QueryManager.BuildQuery(
+                @"INSERT INTO TagContexts (TagContexts_Text) VALUES (?);" +
+                @"SELECT last_insert_rowid()"
+            );
+            _MakeKindID = QueryManager.BuildQuery(
+                @"INSERT INTO TagKinds (TagKinds_Name) VALUES (?);" +
+                @"SELECT last_insert_rowid()"
+            );
+            _MakeLanguageID = QueryManager.BuildQuery(
+                @"INSERT INTO TagLanguages (TagLanguages_Name) VALUES (?);" +
+                @"SELECT last_insert_rowid()"
+            );
+            _MakeSourceFileID = QueryManager.BuildQuery(
+                @"INSERT OR REPLACE INTO SourceFiles (SourceFiles_Path, SourceFiles_Timestamp) VALUES (?, ?);" +
+                @"SELECT last_insert_rowid()"
+            );
+            _DeleteTagsForFile = QueryManager.BuildQuery(@"DELETE FROM Tags WHERE SourceFiles_ID = ?");
+            _DeleteSourceFile = QueryManager.BuildQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_ID = ?");
+            _DeleteTagsForFolder = QueryManager.BuildQuery(
                 @"DELETE FROM Tags WHERE " +
                 @"Tags.SourceFiles_ID IN ( " +
                 @"SELECT SourceFiles_ID FROM SourceFiles WHERE " +
                 @"SourceFiles.SourceFiles_Path LIKE ? )"
             );
-            _DeleteSourceFilesForFolder = CompileQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_Path LIKE ?");
-            _InsertTag = CompileQuery(
+            _DeleteSourceFilesForFolder = QueryManager.BuildQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_Path LIKE ?");
+            _InsertTag = QueryManager.BuildQuery(
                 @"INSERT INTO Tags (" +
                 @"Tags_Name, SourceFiles_ID, Tags_LineNumber, TagKinds_ID, TagContexts_ID, TagLanguages_ID" +
                 @") VALUES (" +
                 @"?, ?, ?, ?, ?, ?" +
-                @")"
+                @");" +
+                @"SELECT last_insert_rowid()"
             );
         }
 
         public void Compact () {
-            using (var trans = Connection.BeginTransaction()) {
-                ExecuteSQL(
-                    @"DELETE FROM TagContexts WHERE (" +
-                    @"SELECT COUNT(*) FROM Tags WHERE " +
-                    @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
-                );
-                trans.Commit();
-            }
-            ExecuteSQL("VACUUM");
+            QueryManager.ExecuteSQL(
+                @"DELETE FROM TagContexts WHERE (" +
+                @"SELECT COUNT(*) FROM Tags WHERE " +
+                @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
+            );
         }
 
-        public IEnumerable<Filter> GetFilters () {
-            using (var reader = _GetFilters.ExecuteReader()) {
-                while (reader.Read()) {
-                    var filter = new Filter();
-                    filter.ID = reader.GetInt32(0);
-                    filter.Pattern = reader.GetString(1);
-                    filter.Language = reader.GetString(2);
-                    yield return filter;
+        public IEnumerator<object> GetFilters () {
+            var filter = new Filter();
+
+            using (var iter = new DbTaskIterator(_GetFilters)) {
+                yield return iter.Start();
+
+                while (!iter.Disposed) {
+                    var item = iter.Current;
+
+                    filter.ID = item.GetInt64(0);
+                    filter.Pattern = item.GetString(1);
+                    filter.Language = item.GetString(2);
+                    yield return new NextValue(filter);
+
+                    yield return iter.MoveNext();
                 }
             }
         }
 
-        public IEnumerable<Folder> GetFolders () {
-            using (var reader = _GetFolders.ExecuteReader()) {
-                while (reader.Read()) {
-                    var folder = new Folder();
-                    folder.ID = reader.GetInt32(0);
-                    folder.Path = reader.GetString(1);
-                    yield return folder;
+        public IEnumerator<object> GetFolders () {
+            var folder = new Folder();
+
+            using (var iter = new DbTaskIterator(_GetFolders)) {
+                yield return iter.Start();
+
+                while (!iter.Disposed) {
+                    var item = iter.Current;
+
+                    folder.ID = item.GetInt64(0);
+                    folder.Path = item.GetString(1);
+                    yield return new NextValue(folder);
+
+                    yield return iter.MoveNext();
                 }
             }
         }
 
-        public IEnumerable<SourceFile> GetSourceFiles () {
-            using (var reader = _GetSourceFiles.ExecuteReader()) {
-                while (reader.Read()) {
-                    var sf = new SourceFile();
-                    sf.ID = reader.GetInt32(0);
-                    sf.Path = reader.GetString(1);
-                    sf.Timestamp = reader.GetInt64(2);
-                    yield return sf;
+        public IEnumerator<object> GetSourceFiles () {
+            var sf = new SourceFile();
+
+            using (var iter = new DbTaskIterator(_GetSourceFiles)) {
+                yield return iter.Start();
+
+                while (!iter.Disposed) {
+                    var item = iter.Current;
+
+                    sf.ID = item.GetInt64(0);
+                    sf.Path = item.GetString(1);
+                    sf.Timestamp = item.GetInt64(2);
+                    yield return new NextValue(sf);
+
+                    yield return iter.MoveNext();
                 }
             }
         }
 
-        public void DeleteSourceFile (string filename) {
-            int id = Convert.ToInt32(ExecuteQuery(_GetSourceFileID, filename));
-            ExecuteQuery(_DeleteTagsForFile, id);
-            ExecuteQuery(_DeleteSourceFile, id);
+        public IEnumerator<object> DeleteSourceFile (string filename) {
+            var f = _GetSourceFileID.ExecuteScalar(filename);
+            yield return f;
+
+            if (f.Result is long) {
+                yield return _DeleteTagsForFile.ExecuteNonQuery(f.Result);
+                yield return _DeleteSourceFile.ExecuteNonQuery(f.Result);
+            }
         }
 
-        public void DeleteTagsForFile (string filename) {
-            int id = Convert.ToInt32(ExecuteQuery(_GetSourceFileID, filename));
-            ExecuteQuery(_DeleteTagsForFile, id);
+        public IEnumerator<object> DeleteTagsForFile (string filename) {
+            var f = _GetSourceFileID.ExecuteScalar(filename);
+            yield return f;
+
+            if (f.Result is long)
+                yield return _DeleteTagsForFile.ExecuteNonQuery(f.Result);
         }
 
-        public void DeleteSourceFileOrFolder (string filename) {
-            int id = Convert.ToInt32(ExecuteQuery(_GetSourceFileID, filename));
-            if (id != 0) {
-                ExecuteQuery(_DeleteTagsForFile, id);
-                ExecuteQuery(_DeleteSourceFile, id);
+        public IEnumerator<object> DeleteSourceFileOrFolder (string filename) {
+            var f = _GetSourceFileID.ExecuteScalar(filename);
+            yield return f;
+
+            if (f.Result is long) {
+                yield return _DeleteTagsForFile.ExecuteNonQuery(f.Result);
+                yield return _DeleteSourceFile.ExecuteNonQuery(f.Result);
             } else {
                 if (!filename.EndsWith("\\"))
                     filename += "\\";
                 filename += "%";
-                ExecuteQuery(_DeleteTagsForFolder, filename);
-                ExecuteQuery(_DeleteSourceFilesForFolder, filename);
+
+                yield return _DeleteTagsForFolder.ExecuteNonQuery(filename);
+                yield return _DeleteSourceFilesForFolder.ExecuteNonQuery(filename);
             }
         }
 
-        public IEnumerable<Change> UpdateFileListAndGetChangeSet () {
-            string filters = String.Join(
-                ";",
-                (from f in GetFilters() select f.Pattern).ToArray()
-            );
+        public IEnumerator<object> GetFilterPatterns () {
+            var iter = new TaskIterator<Filter>(GetFilters());
+            yield return iter.Start();
+            var f = iter.ToArray();
 
-            var folders = (from f in GetFolders() select f.Path).ToArray();
+            yield return f;
 
-            foreach (var file in GetSourceFiles()) {
+            string[] filters = (from _ in (Filter[])f.Result select _.Pattern).ToArray();
+
+            yield return new Result(filters);
+        }
+
+        public IEnumerator<object> GetFolderPaths () {
+            var iter = new TaskIterator<Folder>(GetFolders());
+            yield return iter.Start();
+            var f = iter.ToArray();
+
+            yield return f;
+
+            string[] folders = (from _ in (Folder[])f.Result select _.Path).ToArray();
+
+            yield return new Result(folders);
+        }
+
+        public IEnumerator<object> UpdateFileListAndGetChangeSet () {
+            var rtc = new RunToCompletion(GetFilterPatterns());
+            yield return rtc;
+            var filters = String.Join(";", (string[])rtc.Result);
+
+            rtc = new RunToCompletion(GetFolderPaths());
+            yield return rtc;
+            var folders = (string[])rtc.Result;
+
+            var sourceFiles = new TaskIterator<SourceFile>(GetSourceFiles());
+            yield return sourceFiles.Start();
+
+            while (!sourceFiles.Disposed) {
+                var file = sourceFiles.Current;
+
                 bool validFolder = false;
                 foreach (var folder in folders) {
                     if (file.Path.StartsWith(folder)) {
@@ -182,126 +254,144 @@ namespace Ndexer {
                 }
 
                 if (!validFolder || !System.IO.File.Exists(file.Path))
-                    yield return new Change { Filename = file.Path, Deleted = true };
+                    yield return new NextValue(
+                        new Change { Filename = file.Path, Deleted = true }
+                    );
+
+                yield return sourceFiles.MoveNext();
             }
 
             foreach (var folder in folders) {
-                foreach (var entry in Squared.Util.IO.EnumDirectoryEntries(
+                var enumerator = Squared.Util.IO.EnumDirectoryEntries(
                     folder, filters, true, Squared.Util.IO.IsFile
-                )) {
+                );
+
+                var dirEntries = enumerator.GetTaskIterator();
+                yield return dirEntries.Start();
+
+                while (!dirEntries.Disposed) {
+                    var entry = dirEntries.Current;
+
                     long newTimestamp = entry.LastWritten;
-                    long oldTimestamp = (long)(GetSourceFileTimestamp(entry.Name) ?? (long)0);
+                    long oldTimestamp = 0;
+
+                    rtc = new RunToCompletion(GetSourceFileTimestamp(entry.Name));
+                    yield return rtc;
+                    if (rtc.Result is long)
+                        oldTimestamp = (long)rtc.Result;
+
                     if (newTimestamp > oldTimestamp)
-                        yield return new Change { Filename = entry.Name, Deleted = false };
+                        yield return new NextValue(
+                            new Change { Filename = entry.Name, Deleted = false }
+                        );
+
+                    yield return dirEntries.MoveNext();
                 }
             }
 
             yield break;
         }
 
-        public int GetLastInsertID () {
-            object result = _LastInsertID.ExecuteScalar();
-            return Convert.ToInt32(result);
+        public IEnumerator<object> GetSourceFileTimestamp (string path) {
+            var f = _GetSourceFileTimestamp.ExecuteScalar(path);
+            yield return f;
+            yield return new Result(f.Result);
         }
 
-        public object GetSourceFileTimestamp (string path) {
-            return ExecuteQuery(_GetSourceFileTimestamp, path);
-        }
+        public IEnumerator<object> GetSourceFileID (string path) {
+            var f = _GetSourceFileID.ExecuteScalar(path);
+            yield return f;
 
-        public void UpdateSourceFileTimestamp (string path, long timestamp) {
-            ExecuteQuery(_UpdateSourceFileTimestamp, path, timestamp);
-        }
-
-        public int GetSourceFileID (string path) {
-            object id = ExecuteQuery(_GetSourceFileID, path);
-            if (id is long) {
-                return Convert.ToInt32(id);
+            if (f.Result is long) {
+                yield return new Result(f.Result);
             } else {
-                return MakeSourceFileID(path, 0);
+                var rtc = new RunToCompletion(MakeSourceFileID(path, 0));
+                yield return rtc;
+                yield return new Result(rtc.Result);
             }
         }
 
-        internal int MakeSourceFileID (string path, int timestamp) {
-            ExecuteQuery(_MakeSourceFileID, path, timestamp);
-            return GetLastInsertID();
+        internal IEnumerator<object> MakeSourceFileID (string path, long timestamp) {
+            var f = _MakeSourceFileID.ExecuteScalar(path, timestamp);
+            yield return f;
+            yield return new Result(f.Result);
         }
 
-        public int GetKindID (string kind) {
+        public IEnumerator<object> GetKindID (string kind) {
             if (kind == null)
-                return 0;
+                yield return new Result(0);
 
-            object id = ExecuteQuery(_GetKindID, kind);
-            if (id is long) {
-                return Convert.ToInt32(id);
+            var f = _GetKindID.ExecuteScalar(kind);
+            yield return f;
+
+            if (f.Result is long) {
+                yield return new Result(f.Result);
             } else {
-                ExecuteQuery(_MakeKindID, kind);
-                return GetLastInsertID();
+                f = _MakeKindID.ExecuteScalar(kind);
+                yield return f;
+                yield return new Result(f.Result);
             }
         }
 
-        public int GetContextID (string context) {
+        public IEnumerator<object> GetContextID (string context) {
             if (context == null)
-                return 0;
+                yield return new Result(0);
 
-            object id = ExecuteQuery(_GetContextID, context);
-            if (id is long) {
-                return Convert.ToInt32(id);
+            var f = _GetContextID.ExecuteScalar(context);
+            yield return f;
+
+            if (f.Result is long) {
+                yield return new Result(f.Result);
             } else {
-                ExecuteQuery(_MakeContextID, context);
-                return GetLastInsertID();
+                f = _MakeContextID.ExecuteScalar(context);
+                yield return f;
+                yield return new Result(f.Result);
             }
         }
 
-        public int GetLanguageID (string language) {
+        public IEnumerator<object> GetLanguageID (string language) {
             if (language == null)
-                return 0;
+                yield return new Result(0);
 
-            object id = ExecuteQuery(_GetLanguageID, language);
-            if (id is long) {
-                return Convert.ToInt32(id);
+            var f = _GetLanguageID.ExecuteScalar(language);
+            yield return f;
+
+            if (f.Result is long) {
+                yield return new Result(f.Result);
             } else {
-                ExecuteQuery(_MakeLanguageID, language);
-                return GetLastInsertID();
+                f = _MakeLanguageID.ExecuteScalar(language);
+                yield return f;
+                yield return new Result(f.Result);
             }
         }
 
-        public object ExecuteQuery (SQLiteCommand command, params object[] parameters) {
-            for (int i = 0; i < parameters.Length; i++) {
-                command.Parameters[i].Value = parameters[i];
-            }
-            return command.ExecuteScalar();
-        }
+        public IEnumerator<object> AddTag (Tag tag) {
+            var rtc = new RunToCompletion(GetSourceFileID(tag.SourceFile));
+            yield return rtc;
+            var sourceFileID = Convert.ToInt64(rtc.Result);
 
-        public SQLiteCommand CompileQuery (string sql) {
-            var cmd = new SQLiteCommand(
-                sql, Connection
-            );
-            string[] parts = sql.Split('?');
-            int numParams = parts.Length - 1;
-            for (int i = 0; i < numParams; i++)
-                cmd.Parameters.Add(cmd.CreateParameter());
-            return cmd;
-        }
+            rtc = new RunToCompletion(GetKindID(tag.Kind));
+            yield return rtc;
+            var kindID = Convert.ToInt64(rtc.Result);
 
-        public int AddTag (Tag tag) {
-            int sourceFileID = GetSourceFileID(tag.SourceFile);
-            int kindID = GetKindID(tag.Kind);
-            int contextID = GetContextID(tag.Context);
-            int languageID = GetLanguageID(tag.Language);
-            ExecuteQuery(_InsertTag,
+            rtc = new RunToCompletion(GetContextID(tag.Context));
+            yield return rtc;
+            var contextID = Convert.ToInt64(rtc.Result);
+
+            rtc = new RunToCompletion(GetLanguageID(tag.Language));
+            yield return rtc;
+            var languageID = Convert.ToInt64(rtc.Result);
+
+            var f = _InsertTag.ExecuteScalar(
                 tag.Name, sourceFileID, tag.LineNumber,
                 kindID, contextID, languageID
             );
-            return GetLastInsertID();
+            yield return f;
+            yield return new Result(f.Result);
         }
 
-        public int ExecuteSQL (string sql) {
-            var cmd = CompileQuery(sql);
-            return cmd.ExecuteNonQuery();
-        }
-
-        public void Clear () {
-            ExecuteSQL("DELETE FROM Tags");
+        public IEnumerator<object> Clear () {
+            yield return QueryManager.ExecuteSQL("DELETE FROM Tags");
         }
 
         void IDisposable.Dispose () {

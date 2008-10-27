@@ -46,7 +46,7 @@ namespace Ndexer {
             Arguments = arguments;
         }
 
-        internal IEnumerator<object> WriteFilenames (BlockingQueue<string> sourceFilenames, Func<string, Future> onNextFile, Func<string, Future> writeLine) {
+        internal IEnumerator<object> WriteFilenames (BlockingQueue<string> sourceFilenames, Func<string, object> onNextFile, Func<string, Future> writeLine) {
             Future pendingLine = null;
             Interlocked.Increment(ref Program.NumWorkers);
             while (true) {
@@ -68,7 +68,7 @@ namespace Ndexer {
             }
         }
 
-        public IEnumerator<object> GenerateTags (BlockingQueue<string> sourceFilenames, BlockingQueue<string> outputLines, Func<string, Future> onNextFile) {
+        public IEnumerator<object> GenerateTags (BlockingQueue<string> sourceFilenames, BlockingQueue<string> outputLines, Func<string, object> onNextFile) {
             var info = new ProcessStartInfo(ApplicationPath, Arguments);
             info.UseShellExecute = false;
             info.RedirectStandardOutput = true;
