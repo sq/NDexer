@@ -13,14 +13,39 @@ using ITask = System.Collections.Generic.IEnumerable<object>;
 using System.Threading;
 
 namespace Ndexer {
-    static class Program {
+    public class ActiveWorker : IDisposable {
+        public string Description = null;
+
+        public ActiveWorker (string description) {
+            Description = description;
+            Resume();
+        }
+
+        public void Resume () {
+            lock (Program.ActiveWorkers)
+                Program.ActiveWorkers.Add(this);
+        }
+
+        public void Suspend () {
+            lock (Program.ActiveWorkers)
+                Program.ActiveWorkers.Remove(this);
+        }
+
+        public void Dispose () {
+            Suspend();
+        }
+    }
+
+    public static class Program {
         public static TaskScheduler Scheduler;
-        public static int NumWorkers = 0;
+        public static List<ActiveWorker> ActiveWorkers = new List<ActiveWorker>();
         public static NotifyIcon NotifyIcon;
         public static Icon Icon_Monitoring;
         public static Icon Icon_Working_1, Icon_Working_2;
         public static ContextMenuStrip ContextMenu;
         public static SQLiteTransaction Transaction = null;
+        public static string TrayCaption;
+        public static string DatabasePath;
 
         /// <summary>
         /// The main entry point for the application.
@@ -39,12 +64,12 @@ namespace Ndexer {
                 return;
             }
 
-            string databasePath = System.IO.Path.GetFullPath(argv[0]);
+            DatabasePath = System.IO.Path.GetFullPath(argv[0]);
 
-            if (!System.IO.File.Exists(databasePath))
-                System.IO.File.Copy(GetDataPath() + @"\ndexer.db", databasePath);
+            if (!System.IO.File.Exists(DatabasePath))
+                System.IO.File.Copy(GetDataPath() + @"\ndexer.db", DatabasePath);
 
-            using (var db = new TagDatabase(databasePath)) {
+            using (var db = new TagDatabase(DatabasePath)) {
                 Scheduler = new TaskScheduler(JobQueue.WindowsMessageBased);
 
                 Icon_Monitoring = Icon.FromHandle(Properties.Resources.database_monitoring.GetHicon());
@@ -71,9 +96,6 @@ namespace Ndexer {
 
                 NotifyIcon = new NotifyIcon();
                 NotifyIcon.ContextMenuStrip = ContextMenu;
-                NotifyIcon.Icon = Icon_Monitoring;
-                NotifyIcon.Text = String.Format("NDexer ({0})", databasePath);
-                NotifyIcon.Visible = true;
 
                 Scheduler.Start(
                     RefreshTrayIcon(),
@@ -113,9 +135,9 @@ namespace Ndexer {
         }
 
         public static void CompactDatabase (TagDatabase db) {
-            Interlocked.Increment(ref NumWorkers);
-            db.Compact();
-            Interlocked.Decrement(ref NumWorkers);
+            using (new ActiveWorker("Compacting index database")) {
+                db.Compact();
+            }
         }
 
         public static IEnumerator<object> AutoShowConfiguration (TagDatabase db, string[] argv) {
@@ -192,46 +214,56 @@ namespace Ndexer {
                 toggle = !toggle;
 
                 Icon theIcon;
-                if (NumWorkers > 0) {
+                string statusMessage = "Idle";
+                int numWorkers = 0;
+                lock (ActiveWorkers)
+                    numWorkers = ActiveWorkers.Count;
+                if (numWorkers > 0) {
                     theIcon = (toggle) ? Icon_Working_1 : Icon_Working_2;
+                    lock (ActiveWorkers)
+                        statusMessage = ActiveWorkers[0].Description;
                 } else {
                     theIcon = Icon_Monitoring;
                 }
 
+                TrayCaption = String.Format("NDexer ({0}) - {1}", DatabasePath, statusMessage);
+
                 if (NotifyIcon.Icon != theIcon)
                     NotifyIcon.Icon = theIcon;
+                if (NotifyIcon.Text != TrayCaption)
+                    NotifyIcon.Text = TrayCaption;
+                if (NotifyIcon.Visible == false)
+                    NotifyIcon.Visible = true;
 
-                yield return new Sleep(0.5);
+                yield return new Sleep(0.33);
             }
         }
 
         public static IEnumerator<object> ScanFiles (TagDatabase db, BlockingQueue<string> sourceFiles) {
-            Interlocked.Increment(ref NumWorkers);
+            using (new ActiveWorker("Scanning hard disk for changes")) {
+                var changeSet = new TaskIterator<TagDatabase.Change>(
+                    db.UpdateFileListAndGetChangeSet()
+                );
+                yield return changeSet.Start();
 
-            var changeSet = new TaskIterator<TagDatabase.Change>(
-                db.UpdateFileListAndGetChangeSet()
-            );
-            yield return changeSet.Start();
+                int numChanges = 0;
+                int numDeletes = 0;
+                while (!changeSet.Disposed) {
+                    var change = changeSet.Current;
+                    if (change.Deleted) {
+                        yield return db.DeleteSourceFile(change.Filename);
+                        numDeletes += 1;
+                    } else {
+                        yield return db.GetSourceFileID(change.Filename);
+                        sourceFiles.Enqueue(change.Filename);
+                        numChanges += 1;
+                    }
 
-            int numChanges = 0;
-            int numDeletes = 0;
-            while (!changeSet.Disposed) {
-                var change = changeSet.Current;
-                if (change.Deleted) {
-                    yield return db.DeleteSourceFile(change.Filename);
-                    numDeletes += 1;
-                } else {
-                    yield return db.GetSourceFileID(change.Filename);
-                    sourceFiles.Enqueue(change.Filename);
-                    numChanges += 1;
+                    yield return changeSet.MoveNext();
                 }
 
-                yield return changeSet.MoveNext();
+                Console.WriteLine("Disk scan complete. {0} change(s), {1} delete(s).", numChanges, numDeletes);
             }
-
-            Interlocked.Decrement(ref NumWorkers);
-
-            Console.WriteLine("Disk scan complete. {0} change(s), {1} delete(s).", numChanges, numDeletes);
         }
 
         private static IEnumerator<object> OnNextFileHandler (TagDatabase db, string filename, long lastWriteTime) {
@@ -269,22 +301,18 @@ namespace Ndexer {
 
             string lastSourceFile = null;
 
-            Interlocked.Increment(ref NumWorkers);
-
             while (true) {
-                Interlocked.Decrement(ref NumWorkers);
-
                 var f = outputTags.Dequeue();
                 yield return f;
 
-                Interlocked.Increment(ref NumWorkers);
+                using (new ActiveWorker("Adding tags to index database")) {
+                    var tag = (Tag)f.Result;
+                    if (tag.SourceFile != lastSourceFile) {
+                        lastSourceFile = tag.SourceFile;
+                    }
 
-                var tag = (Tag)f.Result;
-                if (tag.SourceFile != lastSourceFile) {
-                    lastSourceFile = tag.SourceFile;
+                    yield return db.AddTag(tag);
                 }
-
-                yield return db.AddTag(tag);
             }
         }
 
@@ -315,32 +343,33 @@ namespace Ndexer {
             long updateInterval = TimeSpan.FromSeconds(15).Ticks;
 
             while (true) {
-                Interlocked.Increment(ref NumWorkers);
                 long now = DateTime.Now.Ticks;
                 if ((changedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
-                    Console.WriteLine("Detected {0} changed file(s). Starting index update...", changedFiles.Count);
-                    foreach (string filename in changedFiles)
-                        sourceFiles.Enqueue(filename);
-                    changedFiles.Clear();
-                    Console.WriteLine("Index update complete.");
+                    using (new ActiveWorker(String.Format("Updating index of {0} changed file(s)", changedFiles.Count))) {
+                        foreach (string filename in changedFiles)
+                            sourceFiles.Enqueue(filename);
+                        changedFiles.Clear();
+                    }
                 }
                 if ((deletedFiles.Count > 0) && ((now - lastDiskChange) > updateInterval)) {
-                    string[] filenames = deletedFiles.ToArray();
-                    deletedFiles.Clear();
-                    yield return DeleteSourceFiles(db, filenames);
-                    Console.WriteLine("Pruned {0} deleted file(s)/folder(s) from index.", filenames.Length);
+                    using (new ActiveWorker(String.Format("Pruning {0} deleted file(s)/folder(s) from index", deletedFiles.Count))) {
+                        string[] filenames = deletedFiles.ToArray();
+                        deletedFiles.Clear();
+                        yield return DeleteSourceFiles(db, filenames);
+                    }
                 }
 
-                now = DateTime.Now.Ticks;
-                foreach (string filename in monitor.GetChangedFiles().Distinct()) {
-                    lastDiskChange = now;
-                    changedFiles.Add(filename);
+                using (new ActiveWorker(String.Format("Reading disk change history"))) {
+                    now = DateTime.Now.Ticks;
+                    foreach (string filename in monitor.GetChangedFiles().Distinct()) {
+                        lastDiskChange = now;
+                        changedFiles.Add(filename);
+                    }
+                    foreach (string filename in monitor.GetDeletedFiles().Distinct()) {
+                        lastDiskChange = now;
+                        deletedFiles.Add(filename);
+                    }
                 }
-                foreach (string filename in monitor.GetDeletedFiles().Distinct()) {
-                    lastDiskChange = now;
-                    deletedFiles.Add(filename);
-                }
-                Interlocked.Decrement(ref NumWorkers);
 
                 yield return new Sleep(1.0);
             }

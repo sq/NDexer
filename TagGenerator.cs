@@ -48,23 +48,22 @@ namespace Ndexer {
 
         internal IEnumerator<object> WriteFilenames (BlockingQueue<string> sourceFilenames, Func<string, object> onNextFile, Func<string, Future> writeLine) {
             Future pendingLine = null;
-            Interlocked.Increment(ref Program.NumWorkers);
             while (true) {
                 string filename = null;
                 {
-                    Interlocked.Decrement(ref Program.NumWorkers);
                     var f = sourceFilenames.Dequeue();
                     yield return f;
-                    Interlocked.Increment(ref Program.NumWorkers);
                     filename = (string)f.Result;
                 }
 
-                yield return onNextFile(filename);
+                using (new ActiveWorker("Sending filenames to indexer")) {
+                    yield return onNextFile(filename);
 
-                if (pendingLine != null)
-                    yield return pendingLine;
+                    if (pendingLine != null)
+                        yield return pendingLine;
 
-                pendingLine = writeLine(filename);
+                    pendingLine = writeLine(filename);
+                }
             }
         }
 
@@ -101,13 +100,10 @@ namespace Ndexer {
                     TaskExecutionPolicy.RunAsBackgroundTask
                 );
 
-                Interlocked.Increment(ref Program.NumWorkers);
                 while (true) {
-                    Interlocked.Decrement(ref Program.NumWorkers);
                     var f = stdout.ReadLine();
                     yield return f;
                     string currentLine = f.Result as string;
-                    Interlocked.Increment(ref Program.NumWorkers);
 
                     if (currentLine == null) {
                         break;
