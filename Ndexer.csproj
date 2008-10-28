@@ -36,14 +36,10 @@
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
     <Reference Include="System.Data.SQLite, Version=1.0.60.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>sqlite\System.Data.SQLite.DLL</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="System.Data.SQLite.Linq, Version=2.0.38.0, Culture=neutral, PublicKeyToken=db937bc2d44ff139, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>sqlite\System.Data.SQLite.Linq.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="System.Xml.Linq">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -115,18 +111,6 @@
     <Compile Include="TagReader.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="ext\squared.tasklib\tasklib.csproj">
-      <Project>{173ABDCA-7278-46FF-A300-D3BF8CCEF181}</Project>
-      <Name>TaskLib</Name>
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="ext\squared.util\util.csproj">
-      <Project>{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}</Project>
-      <Name>Util</Name>
-      <Private>False</Private>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="icons\database_monitoring.png" />
   </ItemGroup>
   <ItemGroup>
@@ -134,6 +118,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="icons\database_working_2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="ext\squared.tasklib\tasklib.csproj">
+      <Project>{173ABDCA-7278-46FF-A300-D3BF8CCEF181}</Project>
+      <Name>tasklib</Name>
+    </ProjectReference>
+    <ProjectReference Include="ext\squared.util\util.csproj">
+      <Project>{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}</Project>
+      <Name>util</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
