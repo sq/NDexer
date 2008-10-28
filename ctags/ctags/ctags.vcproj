@@ -175,191 +175,191 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="H:\program files\ctags57\args.c"
+				RelativePath="..\args.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\asm.c"
+				RelativePath="..\asm.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\asp.c"
+				RelativePath="..\asp.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\awk.c"
+				RelativePath="..\awk.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\basic.c"
+				RelativePath="..\basic.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\beta.c"
+				RelativePath="..\beta.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\c.c"
+				RelativePath="..\c.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\cobol.c"
+				RelativePath="..\cobol.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\debug.c"
+				RelativePath="..\debug.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\eiffel.c"
+				RelativePath="..\eiffel.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\entry.c"
+				RelativePath="..\entry.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\erlang.c"
+				RelativePath="..\erlang.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\fortran.c"
+				RelativePath="..\fortran.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\get.c"
+				RelativePath="..\get.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\html.c"
+				RelativePath="..\html.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\jscript.c"
+				RelativePath="..\jscript.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\keyword.c"
+				RelativePath="..\keyword.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\lisp.c"
+				RelativePath="..\lisp.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\lregex.c"
+				RelativePath="..\lregex.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\lua.c"
+				RelativePath="..\lua.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\main.c"
+				RelativePath="..\main.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\make.c"
+				RelativePath="..\make.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\options.c"
+				RelativePath="..\options.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\parse.c"
+				RelativePath="..\parse.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\pascal.c"
+				RelativePath="..\pascal.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\perl.c"
+				RelativePath="..\perl.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\php.c"
+				RelativePath="..\php.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\python.c"
+				RelativePath="..\python.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\read.c"
+				RelativePath="..\read.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\readtags.c"
+				RelativePath="..\readtags.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\gnu_regex\regex.c"
+				RelativePath="..\gnu_regex\regex.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\rexx.c"
+				RelativePath="..\rexx.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\routines.c"
+				RelativePath="..\routines.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\ruby.c"
+				RelativePath="..\ruby.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\scheme.c"
+				RelativePath="..\scheme.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\sh.c"
+				RelativePath="..\sh.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\slang.c"
+				RelativePath="..\slang.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\sml.c"
+				RelativePath="..\sml.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\sort.c"
+				RelativePath="..\sort.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\sql.c"
+				RelativePath="..\sql.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\strlist.c"
+				RelativePath="..\strlist.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\tcl.c"
+				RelativePath="..\tcl.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\verilog.c"
+				RelativePath="..\verilog.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\vhdl.c"
+				RelativePath="..\vhdl.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\vim.c"
+				RelativePath="..\vim.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\vstring.c"
+				RelativePath="..\vstring.c"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\yacc.c"
+				RelativePath="..\yacc.c"
 				>
 			</File>
 		</Filter>
@@ -369,115 +369,115 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="H:\program files\ctags57\acconfig.h"
+				RelativePath="..\acconfig.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\args.h"
+				RelativePath="..\args.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\ctags.h"
+				RelativePath="..\ctags.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\debug.h"
+				RelativePath="..\debug.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\e_amiga.h"
+				RelativePath="..\e_amiga.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\e_djgpp.h"
+				RelativePath="..\e_djgpp.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\e_mac.h"
+				RelativePath="..\e_mac.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\e_msoft.h"
+				RelativePath="..\e_msoft.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\e_os2.h"
+				RelativePath="..\e_os2.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\e_qdos.h"
+				RelativePath="..\e_qdos.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\e_riscos.h"
+				RelativePath="..\e_riscos.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\e_vms.h"
+				RelativePath="..\e_vms.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\entry.h"
+				RelativePath="..\entry.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\general.h"
+				RelativePath="..\general.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\get.h"
+				RelativePath="..\get.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\keyword.h"
+				RelativePath="..\keyword.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\main.h"
+				RelativePath="..\main.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\options.h"
+				RelativePath="..\options.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\parse.h"
+				RelativePath="..\parse.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\parsers.h"
+				RelativePath="..\parsers.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\read.h"
+				RelativePath="..\read.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\readtags.h"
+				RelativePath="..\readtags.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\gnu_regex\regex.h"
+				RelativePath="..\gnu_regex\regex.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\regex.h"
+				RelativePath="..\regex.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\routines.h"
+				RelativePath="..\routines.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\sort.h"
+				RelativePath="..\sort.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\strlist.h"
+				RelativePath="..\strlist.h"
 				>
 			</File>
 			<File
-				RelativePath="H:\program files\ctags57\vstring.h"
+				RelativePath="..\vstring.h"
 				>
 			</File>
 		</Filter>

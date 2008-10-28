@@ -116,10 +116,18 @@ namespace Ndexer {
             }
         }
 
-        public static string GetDataPath () {
+        public static string GetExecutablePath() {
             string executablePath = System.IO.Path.GetDirectoryName(Application.ExecutablePath)
-                .ToLower().Replace(@"\bin\debug", "").Replace(@"\bin\release", "") + @"\data\";
+                .ToLower().Replace(@"\bin\debug", "").Replace(@"\bin\release", "");
             return executablePath;
+        }
+
+        public static string GetCTagsPath() {
+            return GetExecutablePath() + @"\ctags\ctags.exe";
+        }
+
+        public static string GetDataPath () {
+            return GetExecutablePath() + @"\data\";
         }
 
         public static void ShowSearch (TagDatabase db) {
@@ -273,7 +281,7 @@ namespace Ndexer {
 
         public static IEnumerator<object> UpdateIndex (TagDatabase db, BlockingQueue<string> sourceFiles) {
             var gen = new TagGenerator(
-                @"C:\program files\ctags57\ctags.exe",
+                GetCTagsPath(),
                 "--filter=yes --filter-terminator=[[<>]]\n --fields=+afmikKlnsStz --sort=no"
             );
 
