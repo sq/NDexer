@@ -115,12 +115,12 @@
     <Compile Include="TagReader.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Fracture\Squared\TaskLib\TaskLib.csproj">
+    <ProjectReference Include="ext\squared.tasklib\tasklib.csproj">
       <Project>{173ABDCA-7278-46FF-A300-D3BF8CCEF181}</Project>
       <Name>TaskLib</Name>
       <Private>False</Private>
     </ProjectReference>
-    <ProjectReference Include="..\Fracture\Squared\Util\Util.csproj">
+    <ProjectReference Include="ext\squared.util\util.csproj">
       <Project>{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}</Project>
       <Name>Util</Name>
       <Private>False</Private>
