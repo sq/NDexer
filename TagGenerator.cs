@@ -100,7 +100,7 @@ namespace Ndexer {
                     TaskExecutionPolicy.RunAsBackgroundTask
                 );
 
-                while (true) {
+                while (!_process.HasExited) {
                     var f = stdout.ReadLine();
                     yield return f;
                     string currentLine = f.Result as string;
@@ -110,6 +110,10 @@ namespace Ndexer {
                     } else {
                         outputLines.Enqueue(currentLine);
                     }
+                }
+
+                if (_process.ExitCode != 0) {
+                    System.Windows.Forms.MessageBox.Show(String.Format("ctags terminated with exit code {0}.", _process.ExitCode), "Error");
                 }
             }
         }

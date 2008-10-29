@@ -67,6 +67,10 @@
     <Compile Include="IndexingStatusDialog.Designer.cs">
       <DependentUpon>IndexingStatusDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="SearchResultListView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="SciTE.cs" />
     <Compile Include="SearchDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -81,6 +85,10 @@
     </EmbeddedResource>
     <EmbeddedResource Include="IndexingStatusDialog.resx">
       <DependentUpon>IndexingStatusDialog.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SearchResultListView.resx">
+      <DependentUpon>SearchResultListView.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">

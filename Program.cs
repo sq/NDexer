@@ -11,6 +11,7 @@ using System.Diagnostics;
 
 using ITask = System.Collections.Generic.IEnumerable<object>;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace Ndexer {
     public class ActiveWorker : IDisposable {
@@ -194,10 +195,16 @@ namespace Ndexer {
 
             var sourceFiles = new BlockingQueue<string>();
 
-            Scheduler.Start(
-                ScanThenMonitor(db, sourceFiles),
-                TaskExecutionPolicy.RunAsBackgroundTask
-            );
+            if (argv.Contains("--noscan"))
+                Scheduler.Start(
+                    MonitorForChanges(db, sourceFiles),
+                    TaskExecutionPolicy.RunAsBackgroundTask
+                );
+            else
+                Scheduler.Start(
+                    ScanThenMonitor(db, sourceFiles),
+                    TaskExecutionPolicy.RunAsBackgroundTask
+                );
 
             Scheduler.Start(
                 UpdateIndex(db, sourceFiles),

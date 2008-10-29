@@ -28,9 +28,10 @@
             this.sbStatus = new System.Windows.Forms.StatusStrip();
             this.lblStatus = new System.Windows.Forms.ToolStripStatusLabel();
             this.pbProgress = new System.Windows.Forms.ToolStripProgressBar();
-            this.lvResults = new System.Windows.Forms.ListView();
+            this.lvResults = new Ndexer.SearchResultListView();
             this.colName = new System.Windows.Forms.ColumnHeader();
-            this.colLocation = new System.Windows.Forms.ColumnHeader();
+            this.colFilename = new System.Windows.Forms.ColumnHeader();
+            this.colLineNumber = new System.Windows.Forms.ColumnHeader();
             this.sbStatus.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -59,7 +60,7 @@
             // 
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Overflow = System.Windows.Forms.ToolStripItemOverflow.Never;
-            this.lblStatus.Size = new System.Drawing.Size(228, 17);
+            this.lblStatus.Size = new System.Drawing.Size(268, 17);
             this.lblStatus.Spring = true;
             this.lblStatus.Text = "0 result(s) found";
             this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -67,9 +68,10 @@
             // pbProgress
             // 
             this.pbProgress.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
+            this.pbProgress.MarqueeAnimationSpeed = 50;
             this.pbProgress.Name = "pbProgress";
             this.pbProgress.Overflow = System.Windows.Forms.ToolStripItemOverflow.Never;
-            this.pbProgress.Size = new System.Drawing.Size(100, 16);
+            this.pbProgress.Size = new System.Drawing.Size(60, 16);
             this.pbProgress.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             // 
             // lvResults
@@ -80,31 +82,41 @@
             this.lvResults.AutoArrange = false;
             this.lvResults.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colName,
-            this.colLocation});
+            this.colFilename,
+            this.colLineNumber});
             this.lvResults.FullRowSelect = true;
-            this.lvResults.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
+            this.lvResults.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
             this.lvResults.HideSelection = false;
             this.lvResults.LabelWrap = false;
             this.lvResults.Location = new System.Drawing.Point(2, 27);
             this.lvResults.MultiSelect = false;
             this.lvResults.Name = "lvResults";
+            this.lvResults.OwnerDraw = true;
             this.lvResults.ShowGroups = false;
             this.lvResults.Size = new System.Drawing.Size(341, 378);
             this.lvResults.TabIndex = 3;
             this.lvResults.UseCompatibleStateImageBehavior = false;
             this.lvResults.View = System.Windows.Forms.View.Details;
-            this.lvResults.ColumnWidthChanged += new System.Windows.Forms.ColumnWidthChangedEventHandler(this.lvResults_ColumnWidthChanged);
+            this.lvResults.VirtualMode = true;
             this.lvResults.SizeChanged += new System.EventHandler(this.lvResults_SizeChanged);
+            this.lvResults.DoubleClick += new System.EventHandler(this.lvResults_DoubleClick);
+            this.lvResults.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.lvResults_RetrieveVirtualItem);
+            this.lvResults.DrawSubItem += new System.Windows.Forms.DrawListViewSubItemEventHandler(this.lvResults_DrawSubItem);
             // 
             // colName
             // 
             this.colName.Text = "Name";
             this.colName.Width = 225;
             // 
-            // colLocation
+            // colFilename
             // 
-            this.colLocation.Text = "Location";
-            this.colLocation.Width = 112;
+            this.colFilename.Text = "Filename";
+            this.colFilename.Width = 112;
+            // 
+            // colLineNumber
+            // 
+            this.colLineNumber.Text = "Line #";
+            this.colLineNumber.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             // 
             // SearchDialog
             // 
@@ -119,6 +131,7 @@
             this.MaximizeBox = false;
             this.Name = "SearchDialog";
             this.Text = "Search";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SearchDialog_FormClosing);
             this.sbStatus.ResumeLayout(false);
             this.sbStatus.PerformLayout();
             this.ResumeLayout(false);
@@ -132,9 +145,10 @@
         private System.Windows.Forms.StatusStrip sbStatus;
         private System.Windows.Forms.ToolStripStatusLabel lblStatus;
         private System.Windows.Forms.ToolStripProgressBar pbProgress;
-        private System.Windows.Forms.ListView lvResults;
+        private SearchResultListView lvResults;
         private System.Windows.Forms.ColumnHeader colName;
-        private System.Windows.Forms.ColumnHeader colLocation;
+        private System.Windows.Forms.ColumnHeader colFilename;
+        private System.Windows.Forms.ColumnHeader colLineNumber;
     }
 }
 
