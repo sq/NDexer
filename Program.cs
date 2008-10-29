@@ -143,12 +143,6 @@ namespace Ndexer {
             dlg.Dispose();
         }
 
-        public static void CompactDatabase (TagDatabase db) {
-            using (new ActiveWorker("Compacting index database")) {
-                db.Compact();
-            }
-        }
-
         public static IEnumerator<object> AutoShowConfiguration (TagDatabase db, string[] argv) {
             bool show = false;
             Future f;
@@ -187,9 +181,9 @@ namespace Ndexer {
         public static IEnumerator<object> MainTask (TagDatabase db, string[] argv) {
             yield return AutoShowConfiguration(db, argv);
 
-            yield return Future.RunInThread(
-                (Action<TagDatabase>)CompactDatabase, db
-            );
+            using (new ActiveWorker("Compacting index database")) {
+                yield return db.Compact();
+            }
 
             Transaction = db.Connection.BeginTransaction();
 
@@ -214,10 +208,6 @@ namespace Ndexer {
 
         public static IEnumerator<object> ScanThenMonitor (TagDatabase db, BlockingQueue<string> sourceFiles) {
             yield return ScanFiles(db, sourceFiles);
-
-            Transaction.Commit();
-            Transaction.Dispose();
-            Transaction = db.Connection.BeginTransaction();
 
             yield return MonitorForChanges(db, sourceFiles);
         }
@@ -327,6 +317,13 @@ namespace Ndexer {
                     }
 
                     yield return db.AddTag(tag);
+
+                    if ((outputTags.Count == 0) && (inputLines.Count == 0) && (sourceFiles.Count == 0)) {
+                        Console.WriteLine("Committing transaction because work queues are empty.");
+                        Transaction.Commit();
+                        Transaction.Dispose();
+                        Transaction = db.Connection.BeginTransaction();
+                    }
                 }
             }
         }

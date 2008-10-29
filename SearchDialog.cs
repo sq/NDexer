@@ -38,22 +38,25 @@ namespace Ndexer {
             lvResults.VirtualListSize = items.Length;
         }
 
-        IEnumerator<object> PerformSearch (string searchText) {
+        private string BuildQueryString () {
             var queryString =
                 @"SELECT Tags_ID, Tags_Name, SourceFiles_Path, Tags_LineNumber " +
-                @"FROM Tags, SourceFiles WHERE " +
-                @"SourceFiles.SourceFiles_ID == Tags.SourceFiles_ID AND " +
+                @"FROM Tags_And_SourceFiles WHERE " +
                 @"Tags_Name = @searchText " +
                 @"UNION ALL " +
                 @"SELECT Tags_ID, Tags_Name, SourceFiles_Path, Tags_LineNumber " +
-                @"FROM Tags, SourceFiles WHERE " +
-                @"SourceFiles.SourceFiles_ID == Tags.SourceFiles_ID AND " +
+                @"FROM Tags_And_SourceFiles WHERE " +
                 @"Tags_Name <> @searchText AND Tags_Name LIKE @searchText " +
                 @"UNION ALL " +
                 @"SELECT * FROM (SELECT Tags_ID, Tags_Name, SourceFiles_Path, Tags_LineNumber " +
-                @"FROM Tags, SourceFiles WHERE " +
-                @"SourceFiles.SourceFiles_ID == Tags.SourceFiles_ID AND " +
+                @"FROM Tags_And_SourceFiles WHERE " +
                 @"Tags_Name LIKE @queryText LIMIT 250)";
+
+            return queryString;
+        }
+
+        IEnumerator<object> PerformSearch (string searchText) {
+            var queryString = BuildQueryString();
 
             string[] columnValues = new string[3];
 
@@ -63,7 +66,8 @@ namespace Ndexer {
             var buffer = new List<SearchResult>();
             var item = new SearchResult();
 
-            string queryText = searchText + ((searchText.Length > 0) ? "_%" : "");
+            searchText = searchText.Replace("%", "[%]").Replace("_", "[_]");
+            string queryText = searchText + ((searchText.Length > 0) ? "%" : "");
 
             using (var query = Tags.QueryManager.BuildQuery(queryString))
             using (var iterator = new DbTaskIterator(

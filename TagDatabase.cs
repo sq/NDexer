@@ -50,6 +50,8 @@ namespace Ndexer {
             _LastInsertID,
             _InsertTag;
 
+        private Dictionary<string, Dictionary<string, object>> _MemoizationCache = new Dictionary<string, Dictionary<string, object>>();
+
         public SQLiteConnection Connection;
         public QueryManager QueryManager;
 
@@ -107,11 +109,15 @@ namespace Ndexer {
             );
         }
 
-        public void Compact () {
-            QueryManager.ExecuteSQL(
+        public IEnumerator<object> Compact () {
+            yield return QueryManager.ExecuteSQL(
                 @"DELETE FROM TagContexts WHERE (" +
                 @"SELECT COUNT(*) FROM Tags WHERE " +
                 @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
+            );
+
+            yield return QueryManager.ExecuteSQL(
+                @"VACUUM"
             );
         }
 
@@ -172,6 +178,8 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> DeleteSourceFile (string filename) {
+            FlushMemoizedIDs();
+
             var f = _GetSourceFileID.ExecuteScalar(filename);
             yield return f;
 
@@ -182,6 +190,8 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> DeleteTagsForFile (string filename) {
+            FlushMemoizedIDs();
+
             var f = _GetSourceFileID.ExecuteScalar(filename);
             yield return f;
 
@@ -190,6 +200,8 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> DeleteSourceFileOrFolder (string filename) {
+            FlushMemoizedIDs();
+
             var f = _GetSourceFileID.ExecuteScalar(filename);
             yield return f;
 
@@ -365,20 +377,49 @@ namespace Ndexer {
             }
         }
 
+        public void FlushMemoizedIDs () {
+            _MemoizationCache.Clear();
+        }
+
+        public IEnumerator<object> MemoizedGetID (Func<string, IEnumerator<object>> task, string argument) {
+            if (argument == null)
+                yield return new Result(0);
+
+            string taskName = task.Method.Name;
+            Dictionary<string, object> resultCache = null;
+            if (!_MemoizationCache.TryGetValue(taskName, out resultCache)) {
+                resultCache = new Dictionary<string, object>();
+                _MemoizationCache[taskName] = resultCache;
+            }
+
+            object result = null;
+            if (resultCache.TryGetValue(argument, out result)) {
+                yield return new Result(result);
+            } else {
+                var rtc = new RunToCompletion(task(argument));
+                yield return rtc;
+                result = rtc.Result;
+                if (resultCache.Count > 256)
+                    resultCache.Clear();
+
+                resultCache[argument] = result;
+            }
+        }
+
         public IEnumerator<object> AddTag (Tag tag) {
-            var rtc = new RunToCompletion(GetSourceFileID(tag.SourceFile));
+            var rtc = new RunToCompletion(MemoizedGetID(GetSourceFileID, tag.SourceFile));
             yield return rtc;
             var sourceFileID = Convert.ToInt64(rtc.Result);
 
-            rtc = new RunToCompletion(GetKindID(tag.Kind));
+            rtc = new RunToCompletion(MemoizedGetID(GetKindID, tag.Kind));
             yield return rtc;
             var kindID = Convert.ToInt64(rtc.Result);
 
-            rtc = new RunToCompletion(GetContextID(tag.Context));
+            rtc = new RunToCompletion(MemoizedGetID(GetContextID, tag.Context));
             yield return rtc;
             var contextID = Convert.ToInt64(rtc.Result);
 
-            rtc = new RunToCompletion(GetLanguageID(tag.Language));
+            rtc = new RunToCompletion(MemoizedGetID(GetLanguageID, tag.Language));
             yield return rtc;
             var languageID = Convert.ToInt64(rtc.Result);
 
