@@ -198,7 +198,8 @@ namespace Ndexer {
         }
 
         private void SearchDialog_FormClosing (object sender, FormClosingEventArgs e) {
-            ActiveSearch.Dispose();
+            if (ActiveSearch != null)
+                ActiveSearch.Dispose();
         }
     }
 }
