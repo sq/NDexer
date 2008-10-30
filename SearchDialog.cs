@@ -62,32 +62,36 @@ namespace Ndexer {
             var buffer = new List<SearchResult>();
             var item = new SearchResult();
 
-            string queryText = searchText + ((searchText.Length > 0) ? "*" : "");
+            SetSearchResults(buffer.ToArray());
 
-            using (var query = Tags.Connection.BuildQuery(queryString))
-            using (var iterator = new DbTaskIterator(
-                query,
-                new NamedParam { N = "searchText", V = searchText },
-                new NamedParam { N = "queryText", V = queryText }
-            )) {
-                yield return iterator.Start();
+            if (searchText.Length > 0) {
+                string queryText = searchText + "*";
 
-                while (!iterator.Disposed) {
-                    if (PendingSearchText != null)
-                        break;
+                using (var query = Tags.Connection.BuildQuery(queryString))
+                using (var iterator = new DbTaskIterator(
+                    query,
+                    new NamedParam { N = "searchText", V = searchText },
+                    new NamedParam { N = "queryText", V = queryText }
+                )) {
+                    yield return iterator.Start();
 
-                    item.Name = iterator.Current.GetString(1);
-                    item.Filename = iterator.Current.GetString(2);
-                    item.LineNumber = iterator.Current.GetInt64(3);
+                    while (!iterator.Disposed) {
+                        if (PendingSearchText != null)
+                            break;
 
-                    buffer.Add(item);
+                        item.Name = iterator.Current.GetString(1);
+                        item.Filename = iterator.Current.GetString(2);
+                        item.LineNumber = iterator.Current.GetInt64(3);
 
-                    if ((buffer.Count % 50 == 0) || ((buffer.Count < 20) && (buffer.Count % 5 == 1))) {
-                        lblStatus.Text = String.Format("{0} result(s) found so far...", buffer.Count);
-                        SetSearchResults(buffer.ToArray());
+                        buffer.Add(item);
+
+                        if ((buffer.Count % 50 == 0) || ((buffer.Count < 20) && (buffer.Count % 5 == 1))) {
+                            lblStatus.Text = String.Format("{0} result(s) found so far...", buffer.Count);
+                            SetSearchResults(buffer.ToArray());
+                        }
+
+                        yield return iterator.MoveNext();
                     }
-
-                    yield return iterator.MoveNext();
                 }
             }
 
@@ -116,18 +120,13 @@ namespace Ndexer {
                 ActiveQueue = null;
                 yield return BeginSearch();
             } else {
-                yield return new Sleep(0.1);
                 PendingSearchText = searchText;
                 ActiveQueue = null;
             }
         }
 
         private void txtFilter_TextChanged (object sender, EventArgs e) {
-            string searchText = txtFilter.Text;
-
-            if (ActiveQueue != null) {
-                ActiveQueue.Dispose();
-            }
+            string searchText = txtFilter.Text.Trim();
 
             ActiveQueue = Program.Scheduler.Start(
                 QueueNewSearch(searchText),
@@ -159,7 +158,7 @@ namespace Ndexer {
                     director.BringToFront();
                 }
             } catch (SciTENotRunningException) {
-
+                MessageBox.Show(this, "SciTE not running", "Error");
             }
         }
 

@@ -40,7 +40,7 @@ namespace Ndexer {
             _EditorWindow = FindWindow("SciTEWindow", null);
 
             if (_DirectorWindow == IntPtr.Zero || _EditorWindow == IntPtr.Zero)
-                throw new InvalidOperationException("SciTE not running");
+                throw new SciTENotRunningException();
 
             var cp = new CreateParams {
                 Caption = "NDexer.SciTEDirector.ListenerWindow",
