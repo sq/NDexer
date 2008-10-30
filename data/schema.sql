@@ -1,3 +1,10 @@
+CREATE TABLE Preferences (
+Preferences_Name TEXT PRIMARY KEY,
+Preferences_Value TEXT
+);
+
+CREATE UNIQUE INDEX Index_Preferences_Name ON Preferences(Preferences_Name);
+
 CREATE TABLE Filters (
 Filters_ID INTEGER PRIMARY KEY, 
 Filters_Language TEXT, 
