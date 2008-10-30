@@ -39,6 +39,8 @@ namespace Ndexer {
             _GetFilters,
             _GetFolders,
             _GetSourceFiles,
+            _GetPreference,
+            _SetPreference,
             _MakeContextID,
             _MakeKindID,
             _MakeLanguageID,
@@ -73,6 +75,8 @@ namespace Ndexer {
             _GetFilters = Connection.BuildQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters");
             _GetFolders = Connection.BuildQuery(@"SELECT Folders_ID, Folders_Path FROM Folders");
             _GetSourceFiles = Connection.BuildQuery(@"SELECT SourceFiles_ID, SourceFiles_Path, SourceFiles_Timestamp FROM SourceFiles");
+            _GetPreference = Connection.BuildQuery(@"SELECT Preferences_Value FROM Preferences WHERE Preferences_Name = ?");
+            _SetPreference = Connection.BuildQuery(@"INSERT OR REPLACE INTO Preferences (Preferences_Name, Preferences_Value) VALUES (?, ?)");
             _LastInsertID = Connection.BuildQuery(@"SELECT last_insert_rowid()");
             _MakeContextID = Connection.BuildQuery(
                 @"INSERT INTO TagContexts (TagContexts_Text) VALUES (?);" +
@@ -175,6 +179,17 @@ namespace Ndexer {
                     yield return iter.MoveNext();
                 }
             }
+        }
+
+        public IEnumerator<object> GetPreference (string name) {
+            var f = _GetPreference.ExecuteScalar(name);
+            yield return f;
+            yield return new Result(f.Result);
+        }
+
+        public IEnumerator<object> SetPreference (string name, string value) {
+            var f = _SetPreference.ExecuteScalar(name, value);
+            yield return f;
         }
 
         public IEnumerator<object> DeleteSourceFile (string filename) {

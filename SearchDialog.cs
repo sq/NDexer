@@ -152,9 +152,8 @@ namespace Ndexer {
             }
             try {
                 using (var director = new SciTEDirector()) {
-                    director.SendCommand("open:{0}", director.Escape(item.Filename));
-                    director.SendCommand("goto:{0},{1}", item.LineNumber, 0);
-                    director.SendCommand("find:{0}", director.Escape(item.Name));
+                    director.OpenFile(item.Filename, item.LineNumber);
+                    director.FindText(item.Name);
                     director.BringToFront();
                 }
             } catch (SciTENotRunningException) {
