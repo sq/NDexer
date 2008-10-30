@@ -23,8 +23,8 @@ namespace Ndexer {
 
             FilterTable = new DataTable("Filters");
             FolderTable = new DataTable("Folders");
-            FilterAdapter = new SQLiteDataAdapter("SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters", Tags.Connection);
-            FolderAdapter = new SQLiteDataAdapter("SELECT Folders_ID, Folders_Path FROM Folders", Tags.Connection);
+            FilterAdapter = new SQLiteDataAdapter("SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters", Tags.NativeConnection);
+            FolderAdapter = new SQLiteDataAdapter("SELECT Folders_ID, Folders_Path FROM Folders", Tags.NativeConnection);
             FilterBuilder = new SQLiteCommandBuilder(FilterAdapter);
             FolderBuilder = new SQLiteCommandBuilder(FolderAdapter);
             FilterAdapter.Fill(FilterTable);
@@ -37,7 +37,7 @@ namespace Ndexer {
 
         public void DataBind (DataGridView dataGrid, BindingSource bindingSource, string tableName) {
             var table = new DataTable(tableName);
-            var adapter = new SQLiteDataAdapter("SELECT * FROM " + tableName, Tags.Connection);
+            var adapter = new SQLiteDataAdapter("SELECT * FROM " + tableName, Tags.NativeConnection);
 
             adapter.Fill(table);
             bindingSource.DataSource = table;

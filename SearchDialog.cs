@@ -44,13 +44,9 @@ namespace Ndexer {
                 @"FROM Tags_And_SourceFiles WHERE " +
                 @"Tags_Name = @searchText " +
                 @"UNION ALL " +
-                @"SELECT Tags_ID, Tags_Name, SourceFiles_Path, Tags_LineNumber " +
-                @"FROM Tags_And_SourceFiles WHERE " +
-                @"Tags_Name <> @searchText AND Tags_Name LIKE @searchText " +
-                @"UNION ALL " +
                 @"SELECT * FROM (SELECT Tags_ID, Tags_Name, SourceFiles_Path, Tags_LineNumber " +
                 @"FROM Tags_And_SourceFiles WHERE " +
-                @"Tags_Name LIKE @queryText LIMIT 250)";
+                @"Tags_Name GLOB @queryText LIMIT 500)";
 
             return queryString;
         }
@@ -66,10 +62,9 @@ namespace Ndexer {
             var buffer = new List<SearchResult>();
             var item = new SearchResult();
 
-            searchText = searchText.Replace("%", "[%]").Replace("_", "[_]");
-            string queryText = searchText + ((searchText.Length > 0) ? "%" : "");
+            string queryText = searchText + ((searchText.Length > 0) ? "*" : "");
 
-            using (var query = Tags.QueryManager.BuildQuery(queryString))
+            using (var query = Tags.Connection.BuildQuery(queryString))
             using (var iterator = new DbTaskIterator(
                 query,
                 new NamedParam { N = "searchText", V = searchText },
@@ -134,7 +129,10 @@ namespace Ndexer {
                 ActiveQueue.Dispose();
             }
 
-            ActiveQueue = Program.Scheduler.Start(QueueNewSearch(searchText));
+            ActiveQueue = Program.Scheduler.Start(
+                QueueNewSearch(searchText),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
         }
 
         private void lvResults_SizeChanged (object sender, EventArgs e) {

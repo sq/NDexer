@@ -70,9 +70,9 @@ namespace Ndexer {
             if (!System.IO.File.Exists(DatabasePath))
                 System.IO.File.Copy(GetDataPath() + @"\ndexer.db", DatabasePath);
 
-            using (var db = new TagDatabase(DatabasePath)) {
-                Scheduler = new TaskScheduler(JobQueue.WindowsMessageBased);
+            Scheduler = new TaskScheduler(JobQueue.WindowsMessageBased);
 
+            using (var db = new TagDatabase(Scheduler, DatabasePath)) {
                 Icon_Monitoring = Icon.FromHandle(Properties.Resources.database_monitoring.GetHicon());
                 Icon_Working_1 = Icon.FromHandle(Properties.Resources.database_working_1.GetHicon());
                 Icon_Working_2 = Icon.FromHandle(Properties.Resources.database_working_2.GetHicon());
@@ -90,8 +90,7 @@ namespace Ndexer {
                 ContextMenu.Items.Add(
                     "E&xit", null,
                     (e, s) => {
-                        NotifyIcon.Visible = false;
-                        Application.Exit();
+                        Scheduler.Start(ExitTask(db));
                     }
                 );
 
@@ -143,6 +142,13 @@ namespace Ndexer {
             dlg.Dispose();
         }
 
+        public static IEnumerator<object> ExitTask (TagDatabase db) {
+            yield return db.Connection.CommitTransaction();
+
+            NotifyIcon.Visible = false;
+            Application.Exit();
+        }
+
         public static IEnumerator<object> AutoShowConfiguration (TagDatabase db, string[] argv) {
             bool show = false;
             Future f;
@@ -185,7 +191,7 @@ namespace Ndexer {
                 yield return db.Compact();
             }
 
-            Transaction = db.Connection.BeginTransaction();
+            yield return db.Connection.BeginTransaction();
 
             var sourceFiles = new BlockingQueue<string>();
 
@@ -320,9 +326,8 @@ namespace Ndexer {
 
                     if ((outputTags.Count == 0) && (inputLines.Count == 0) && (sourceFiles.Count == 0)) {
                         Console.WriteLine("Committing transaction because work queues are empty.");
-                        Transaction.Commit();
-                        Transaction.Dispose();
-                        Transaction = db.Connection.BeginTransaction();
+                        yield return db.Connection.CommitTransaction();
+                        yield return db.Connection.BeginTransaction();
                     }
                 }
             }

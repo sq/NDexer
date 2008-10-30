@@ -52,54 +52,54 @@ namespace Ndexer {
 
         private Dictionary<string, Dictionary<string, object>> _MemoizationCache = new Dictionary<string, Dictionary<string, object>>();
 
-        public SQLiteConnection Connection;
-        public QueryManager QueryManager;
+        public SQLiteConnection NativeConnection;
+        public ConnectionWrapper Connection;
 
-        public TagDatabase (string filename) {
+        public TagDatabase (TaskScheduler scheduler, string filename) {
             string connectionString = String.Format("Data Source={0}", filename);
-            Connection = new SQLiteConnection(connectionString);
-            Connection.Open();
-            QueryManager = new QueryManager(Connection);
+            NativeConnection = new SQLiteConnection(connectionString);
+            NativeConnection.Open();
+            Connection = new ConnectionWrapper(scheduler, NativeConnection);
 
             CompileQueries();
         }
 
         private void CompileQueries () {
-            _GetContextID = QueryManager.BuildQuery(@"SELECT TagContexts_ID FROM TagContexts WHERE TagContexts_Text = ?");
-            _GetKindID = QueryManager.BuildQuery(@"SELECT TagKinds_ID FROM TagKinds WHERE TagKinds_Name = ?");
-            _GetLanguageID = QueryManager.BuildQuery(@"SELECT TagLanguages_ID FROM TagLanguages WHERE TagLanguages_Name = ?");
-            _GetSourceFileID = QueryManager.BuildQuery(@"SELECT SourceFiles_ID FROM SourceFiles WHERE SourceFiles_Path = ?");
-            _GetSourceFileTimestamp = QueryManager.BuildQuery(@"SELECT SourceFiles_Timestamp FROM SourceFiles WHERE SourceFiles_Path = ?");
-            _GetFilters = QueryManager.BuildQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters");
-            _GetFolders = QueryManager.BuildQuery(@"SELECT Folders_ID, Folders_Path FROM Folders");
-            _GetSourceFiles = QueryManager.BuildQuery(@"SELECT SourceFiles_ID, SourceFiles_Path, SourceFiles_Timestamp FROM SourceFiles");
-            _LastInsertID = QueryManager.BuildQuery(@"SELECT last_insert_rowid()");
-            _MakeContextID = QueryManager.BuildQuery(
+            _GetContextID = Connection.BuildQuery(@"SELECT TagContexts_ID FROM TagContexts WHERE TagContexts_Text = ?");
+            _GetKindID = Connection.BuildQuery(@"SELECT TagKinds_ID FROM TagKinds WHERE TagKinds_Name = ?");
+            _GetLanguageID = Connection.BuildQuery(@"SELECT TagLanguages_ID FROM TagLanguages WHERE TagLanguages_Name = ?");
+            _GetSourceFileID = Connection.BuildQuery(@"SELECT SourceFiles_ID FROM SourceFiles WHERE SourceFiles_Path = ?");
+            _GetSourceFileTimestamp = Connection.BuildQuery(@"SELECT SourceFiles_Timestamp FROM SourceFiles WHERE SourceFiles_Path = ?");
+            _GetFilters = Connection.BuildQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters");
+            _GetFolders = Connection.BuildQuery(@"SELECT Folders_ID, Folders_Path FROM Folders");
+            _GetSourceFiles = Connection.BuildQuery(@"SELECT SourceFiles_ID, SourceFiles_Path, SourceFiles_Timestamp FROM SourceFiles");
+            _LastInsertID = Connection.BuildQuery(@"SELECT last_insert_rowid()");
+            _MakeContextID = Connection.BuildQuery(
                 @"INSERT INTO TagContexts (TagContexts_Text) VALUES (?);" +
                 @"SELECT last_insert_rowid()"
             );
-            _MakeKindID = QueryManager.BuildQuery(
+            _MakeKindID = Connection.BuildQuery(
                 @"INSERT INTO TagKinds (TagKinds_Name) VALUES (?);" +
                 @"SELECT last_insert_rowid()"
             );
-            _MakeLanguageID = QueryManager.BuildQuery(
+            _MakeLanguageID = Connection.BuildQuery(
                 @"INSERT INTO TagLanguages (TagLanguages_Name) VALUES (?);" +
                 @"SELECT last_insert_rowid()"
             );
-            _MakeSourceFileID = QueryManager.BuildQuery(
+            _MakeSourceFileID = Connection.BuildQuery(
                 @"INSERT OR REPLACE INTO SourceFiles (SourceFiles_Path, SourceFiles_Timestamp) VALUES (?, ?);" +
                 @"SELECT last_insert_rowid()"
             );
-            _DeleteTagsForFile = QueryManager.BuildQuery(@"DELETE FROM Tags WHERE SourceFiles_ID = ?");
-            _DeleteSourceFile = QueryManager.BuildQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_ID = ?");
-            _DeleteTagsForFolder = QueryManager.BuildQuery(
+            _DeleteTagsForFile = Connection.BuildQuery(@"DELETE FROM Tags WHERE SourceFiles_ID = ?");
+            _DeleteSourceFile = Connection.BuildQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_ID = ?");
+            _DeleteTagsForFolder = Connection.BuildQuery(
                 @"DELETE FROM Tags WHERE " +
                 @"Tags.SourceFiles_ID IN ( " +
                 @"SELECT SourceFiles_ID FROM SourceFiles WHERE " +
                 @"SourceFiles.SourceFiles_Path LIKE ? )"
             );
-            _DeleteSourceFilesForFolder = QueryManager.BuildQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_Path LIKE ?");
-            _InsertTag = QueryManager.BuildQuery(
+            _DeleteSourceFilesForFolder = Connection.BuildQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_Path LIKE ?");
+            _InsertTag = Connection.BuildQuery(
                 @"INSERT INTO Tags (" +
                 @"Tags_Name, SourceFiles_ID, Tags_LineNumber, TagKinds_ID, TagContexts_ID, TagLanguages_ID" +
                 @") VALUES (" +
@@ -110,13 +110,13 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> Compact () {
-            yield return QueryManager.ExecuteSQL(
+            yield return Connection.ExecuteSQL(
                 @"DELETE FROM TagContexts WHERE (" +
                 @"SELECT COUNT(*) FROM Tags WHERE " +
                 @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
             );
 
-            yield return QueryManager.ExecuteSQL(
+            yield return Connection.ExecuteSQL(
                 @"VACUUM"
             );
         }
@@ -432,11 +432,12 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> Clear () {
-            yield return QueryManager.ExecuteSQL("DELETE FROM Tags");
+            yield return Connection.ExecuteSQL("DELETE FROM Tags");
         }
 
         void IDisposable.Dispose () {
             Connection.Dispose();
+            NativeConnection.Dispose();
         }
     }
 }
