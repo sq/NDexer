@@ -224,34 +224,42 @@ namespace Ndexer {
             while (true) {
                 toggle = !toggle;
 
-                Icon theIcon;
-                string statusMessage = "Idle";
-                int numWorkers = 0;
-                lock (ActiveWorkers)
-                    numWorkers = ActiveWorkers.Count;
-                if (numWorkers > 0) {
-                    theIcon = (toggle) ? Icon_Working_1 : Icon_Working_2;
+                try {
+
+                    Icon theIcon;
+                    string statusMessage = "Idle";
+                    int numWorkers = 0;
                     lock (ActiveWorkers)
-                        statusMessage = ActiveWorkers[0].Description;
-                } else {
-                    theIcon = Icon_Monitoring;
+                        numWorkers = ActiveWorkers.Count;
+                    if (numWorkers > 0) {
+                        theIcon = (toggle) ? Icon_Working_1 : Icon_Working_2;
+                        lock (ActiveWorkers)
+                            statusMessage = ActiveWorkers[0].Description;
+                    } else {
+                        theIcon = Icon_Monitoring;
+                    }
+
+                    TrayCaption = String.Format("NDexer ({0}) - {1}", System.IO.Path.GetFileName(DatabasePath), statusMessage);
+                    if (TrayCaption.Length >= 64)
+                        TrayCaption = TrayCaption.Substring(0, 60) + "...";
+
+                    if (NotifyIcon.Icon != theIcon)
+                        NotifyIcon.Icon = theIcon;
+                    if (NotifyIcon.Text != TrayCaption)
+                        NotifyIcon.Text = TrayCaption;
+                    if (NotifyIcon.Visible == false)
+                        NotifyIcon.Visible = true;
+                } catch (Exception ex) {
+                    Console.WriteLine("Error in RefreshTrayIcon: {0}", ex.ToString());
+                    throw;
                 }
 
-                TrayCaption = String.Format("NDexer ({0}) - {1}", DatabasePath, statusMessage);
-
-                if (NotifyIcon.Icon != theIcon)
-                    NotifyIcon.Icon = theIcon;
-                if (NotifyIcon.Text != TrayCaption)
-                    NotifyIcon.Text = TrayCaption;
-                if (NotifyIcon.Visible == false)
-                    NotifyIcon.Visible = true;
-
-                yield return new Sleep(0.33);
+                yield return new Sleep(0.5);
             }
         }
 
         public static IEnumerator<object> ScanFiles (TagDatabase db, BlockingQueue<string> sourceFiles) {
-            using (new ActiveWorker("Scanning hard disk for changes")) {
+            using (new ActiveWorker("Scanning hard disk for changes apple banana orange tomato chocolate raspberry vanilla")) {
                 var changeSet = new TaskIterator<TagDatabase.Change>(
                     db.UpdateFileListAndGetChangeSet()
                 );
