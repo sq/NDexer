@@ -65,7 +65,7 @@ namespace Ndexer {
             SetSearchResults(buffer.ToArray());
 
             if (searchText.Length > 0) {
-                string queryText = searchText + "*";
+                string queryText = searchText + "?*";
 
                 using (var query = Tags.Connection.BuildQuery(queryString))
                 using (var iterator = new DbTaskIterator(
