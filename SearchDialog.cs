@@ -11,6 +11,17 @@ using Squared.Task;
 
 namespace Ndexer {
     public partial class SearchDialog : Form {
+        enum SearchMode {
+            None = -1,
+            FindTags = 0,
+            FindFiles = 1
+        }
+
+        class ColumnInfo {
+            public Func<int, int> CalculateWidth;
+            public Func<SearchResult, string> GetColumnValue;
+        }
+
         struct SearchResult {
             public string Name;
             public string Filename;
@@ -18,76 +29,152 @@ namespace Ndexer {
         }
 
         TagDatabase Tags;
+        ConnectionWrapper Connection;
         Future ActiveSearch = null;
         Future ActiveQueue = null;
         string ActiveSearchText = null;
+        SearchMode ActiveSearchMode = SearchMode.None;
         string PendingSearchText = null;
+        SearchMode PendingSearchMode = SearchMode.None;
         ListViewItem DefaultListItem = new ListViewItem(new string[3]);
         SearchResult[] SearchResults = new SearchResult[0];
+        SearchMode DisplayedSearchMode = SearchMode.None;
 
         public SearchDialog (TagDatabase tags) {
             Tags = tags;
+            Connection = tags.OpenReadConnection();
 
             InitializeComponent();
 
             lvResults_SizeChanged(lvResults, EventArgs.Empty);
         }
 
-        private void SetSearchResults (SearchResult[] items) {
+        private int CalculateLineNumberSize() {
+            return TextRenderer.MeasureText("00000", lvResults.Font).Width;
+        }
+
+        private ColumnHeader[] GetColumnsForMode (SearchMode searchMode) {
+            switch (searchMode) {
+                case SearchMode.FindTags:
+                    return new ColumnHeader[] {
+                        new ColumnHeader() { 
+                            Text = "Tag Name", 
+                            Tag = new ColumnInfo() { 
+                                CalculateWidth = (totalWidth) => ((totalWidth - CalculateLineNumberSize()) * 3 / 7),
+                                GetColumnValue = (sr) => (sr.Name)
+                            }
+                        },
+                        new ColumnHeader() { 
+                            Text = "File Name", 
+                            Tag = new ColumnInfo() { 
+                                CalculateWidth = (totalWidth) => ((totalWidth - CalculateLineNumberSize()) * 4 / 7),
+                                GetColumnValue = (sr) => (sr.Filename)
+                            }
+                        },
+                        new ColumnHeader() { 
+                            Text = "Line #", 
+                            Tag = new ColumnInfo() { 
+                                CalculateWidth = (totalWidth) => (CalculateLineNumberSize()),
+                                GetColumnValue = (sr) => (sr.LineNumber.ToString())
+                            }
+                        },
+                    };
+                case SearchMode.FindFiles:
+                    return new ColumnHeader[] {
+                        new ColumnHeader() { 
+                            Text = "File Name", 
+                            Tag = new ColumnInfo() { 
+                                CalculateWidth = (totalWidth) => (totalWidth),
+                                GetColumnValue = (sr) => (sr.Filename)
+                            }
+                        }
+                    };
+            }
+
+            return new ColumnHeader[0];
+        }
+
+        private void SetSearchResults (SearchMode searchMode, SearchResult[] items) {
             SearchResults = items;
+
+            if (searchMode != DisplayedSearchMode) {
+                var columns = GetColumnsForMode(searchMode);
+                DisplayedSearchMode = searchMode;
+                lvResults.VirtualListSize = 0;
+                lvResults.Columns.Clear();
+                lvResults.Columns.AddRange(columns);
+                lvResults_SizeChanged(null, EventArgs.Empty);
+            }
+            
             lvResults.VirtualListSize = items.Length;
         }
 
-        private string BuildQueryString () {
-            var queryString =
-                @"SELECT Tags_ID, Tags_Name, SourceFiles_Path, Tags_LineNumber " +
-                @"FROM Tags_And_SourceFiles WHERE " +
-                @"Tags_Name = @searchText " +
-                @"UNION ALL " +
-                @"SELECT * FROM (SELECT Tags_ID, Tags_Name, SourceFiles_Path, Tags_LineNumber " +
-                @"FROM Tags_And_SourceFiles WHERE " +
-                @"Tags_Name GLOB @queryText LIMIT 500)";
+        private DbTaskIterator BuildQuery (SearchMode searchMode, string searchText) {
+            switch (searchMode) {
+                case SearchMode.FindTags: {
+                        var query = Connection.BuildQuery(
+                            @"SELECT Tags_Name, SourceFiles_Path, Tags_LineNumber " +
+                            @"FROM Tags_And_SourceFiles WHERE " +
+                            @"Tags_Name = ? " +
+                            @"UNION ALL " +
+                            @"SELECT * FROM (SELECT Tags_Name, SourceFiles_Path, Tags_LineNumber " +
+                            @"FROM Tags_And_SourceFiles WHERE " +
+                            @"Tags_Name GLOB ? LIMIT 500)"
+                        );
+                        return new DbTaskIterator(query, searchText, searchText + "?*");
+                    }
+                case SearchMode.FindFiles: {
+                        var query = Connection.BuildQuery(
+                            @"SELECT SourceFiles_Path " +
+                            @"FROM SourceFiles WHERE " +
+                            @"SourceFiles_Path GLOB ? " +
+                            @"UNION ALL " +
+                            @"SELECT SourceFiles_Path " +
+                            @"FROM SourceFiles WHERE " +
+                            @"SourceFiles_Path GLOB ?"
+                        );
+                        return new DbTaskIterator(query, "*" + searchText, "*" + searchText + "?*");
+                    }
+            }
 
-            return queryString;
+            throw new InvalidOperationException();
         }
 
-        IEnumerator<object> PerformSearch (string searchText) {
-            var queryString = BuildQueryString();
-
+        IEnumerator<object> PerformSearch (SearchMode searchMode, string searchText) {
             string[] columnValues = new string[3];
 
             pbProgress.Style = ProgressBarStyle.Marquee;
-            lblStatus.Text = String.Format("{0} result(s) found so far...", lvResults.Items.Count);
+            lblStatus.Text = String.Format("Starting search...");
 
             var buffer = new List<SearchResult>();
             var item = new SearchResult();
 
-            SetSearchResults(buffer.ToArray());
+            SetSearchResults(searchMode, buffer.ToArray());
 
             if (searchText.Length > 0) {
-                string queryText = searchText + "?*";
-
-                using (var query = Tags.Connection.BuildQuery(queryString))
-                using (var iterator = new DbTaskIterator(
-                    query,
-                    new NamedParam { N = "searchText", V = searchText },
-                    new NamedParam { N = "queryText", V = queryText }
-                )) {
+                using (var iterator = BuildQuery(searchMode, searchText)) {
                     yield return iterator.Start();
 
                     while (!iterator.Disposed) {
                         if (PendingSearchText != null)
                             break;
 
-                        item.Name = iterator.Current.GetString(1);
-                        item.Filename = iterator.Current.GetString(2);
-                        item.LineNumber = iterator.Current.GetInt64(3);
+                        switch (searchMode) {
+                            case SearchMode.FindFiles:
+                                item.Filename = iterator.Current.GetString(0);
+                                break;
+                            case SearchMode.FindTags:
+                                item.Name = iterator.Current.GetString(0);
+                                item.Filename = iterator.Current.GetString(1);
+                                item.LineNumber = iterator.Current.GetInt64(2);
+                                break;
+                        }
 
                         buffer.Add(item);
 
                         if ((buffer.Count % 50 == 0) || ((buffer.Count < 20) && (buffer.Count % 5 == 1))) {
                             lblStatus.Text = String.Format("{0} result(s) found so far...", buffer.Count);
-                            SetSearchResults(buffer.ToArray());
+                            SetSearchResults(searchMode, buffer.ToArray());
                         }
 
                         yield return iterator.MoveNext();
@@ -98,7 +185,7 @@ namespace Ndexer {
             if (PendingSearchText != null) {
                 yield return BeginSearch();
             } else {
-                SetSearchResults(buffer.ToArray());
+                SetSearchResults(searchMode, buffer.ToArray());
                 lblStatus.Text = String.Format("{0} result(s) found.", buffer.Count);
                 pbProgress.Style = ProgressBarStyle.Continuous;
             }
@@ -106,41 +193,34 @@ namespace Ndexer {
 
         IEnumerator<object> BeginSearch () {
             ActiveSearchText = PendingSearchText;
+            ActiveSearchMode = PendingSearchMode;
             PendingSearchText = null;
+            PendingSearchMode = SearchMode.None;
             ActiveSearch = Program.Scheduler.Start(
-                PerformSearch(ActiveSearchText),
+                PerformSearch(ActiveSearchMode, ActiveSearchText),
                 TaskExecutionPolicy.RunWhileFutureLives
             );
             yield break;
         }
 
-        IEnumerator<object> QueueNewSearch (string searchText) {
+        IEnumerator<object> QueueNewSearch (SearchMode searchMode, string searchText) {
+            ActiveQueue = null;
+            PendingSearchMode = searchMode;
+            PendingSearchText = searchText;
+
             if ((ActiveSearch == null) || (ActiveSearch.Completed)) {
-                PendingSearchText = searchText;
-                ActiveQueue = null;
                 yield return BeginSearch();
-            } else {
-                PendingSearchText = searchText;
-                ActiveQueue = null;
             }
         }
 
         private void txtFilter_TextChanged (object sender, EventArgs e) {
-            string searchText = txtFilter.Text.Trim();
-
-            ActiveQueue = Program.Scheduler.Start(
-                QueueNewSearch(searchText),
-                TaskExecutionPolicy.RunAsBackgroundTask
-            );
+            SearchParametersChanged();
         }
 
         private void lvResults_SizeChanged (object sender, EventArgs e) {
             int totalSize = lvResults.ClientSize.Width - 2;
-            int lineNumberSize = TextRenderer.MeasureText("00000", lvResults.Font).Width;
-            totalSize -= lineNumberSize;
-            lvResults.Columns[0].Width = totalSize * 3 / 7;
-            lvResults.Columns[1].Width = totalSize * 4 / 7;
-            lvResults.Columns[2].Width = lineNumberSize;
+            for (int i = 0; i < lvResults.Columns.Count; i++)
+                lvResults.Columns[i].Width = (lvResults.Columns[i].Tag as ColumnInfo).CalculateWidth(totalSize);
         }
 
         private void lvResults_DoubleClick (object sender, EventArgs e) {
@@ -152,9 +232,17 @@ namespace Ndexer {
             }
             try {
                 using (var director = new SciTEDirector()) {
-                    director.OpenFile(item.Filename, item.LineNumber);
-                    director.FindText(item.Name);
-                    director.BringToFront();
+                    switch (DisplayedSearchMode) {
+                        case SearchMode.FindFiles:
+                            director.OpenFile(item.Filename);
+                            director.BringToFront();
+                            break;
+                        case SearchMode.FindTags:
+                            director.OpenFile(item.Filename, item.LineNumber);
+                            director.FindText(item.Name);
+                            director.BringToFront();
+                            break;
+                    } 
                 }
             } catch (SciTENotRunningException) {
                 MessageBox.Show(this, "SciTE not running", "Error");
@@ -189,17 +277,40 @@ namespace Ndexer {
                 e.Item = DefaultListItem;
             else {
                 SearchResult item = SearchResults[e.ItemIndex];
-                string[] subitems = new string[3];
-                subitems[0] = item.Name;
-                subitems[1] = item.Filename;
-                subitems[2] = item.LineNumber.ToString();
+                string[] subitems = new string[lvResults.Columns.Count];
+                for (int i = 0; i < lvResults.Columns.Count; i++)
+                    subitems[i] = (lvResults.Columns[i].Tag as ColumnInfo).GetColumnValue(item);
                 e.Item = new ListViewItem(subitems);
             }
         }
 
         private void SearchDialog_FormClosing (object sender, FormClosingEventArgs e) {
-            if (ActiveSearch != null)
+            if (Connection != null) {
+                Connection.Dispose();
+                Connection = null;
+            }
+            if (ActiveSearch != null) {
                 ActiveSearch.Dispose();
+                ActiveSearch = null;
+            }
+            if (ActiveQueue != null) {
+                ActiveQueue.Dispose();
+                ActiveQueue = null;
+            }
+        }
+
+        private void tcFilter_SelectedIndexChanged(object sender, EventArgs e) {
+            SearchParametersChanged();
+        }
+
+        private void SearchParametersChanged() {
+            var searchMode = (SearchMode)tcFilter.SelectedIndex;
+            string searchText = txtFilter.Text.Trim();
+
+            ActiveQueue = Program.Scheduler.Start(
+                QueueNewSearch(searchMode, searchText),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
         }
     }
 }

@@ -36,9 +36,6 @@ namespace Ndexer {
             _GetLanguageID,
             _GetSourceFileID,
             _GetSourceFileTimestamp,
-            _GetFilters,
-            _GetFolders,
-            _GetSourceFiles,
             _GetPreference,
             _SetPreference,
             _MakeContextID,
@@ -54,10 +51,13 @@ namespace Ndexer {
 
         private Dictionary<string, Dictionary<string, object>> _MemoizationCache = new Dictionary<string, Dictionary<string, object>>();
 
+        public TaskScheduler Scheduler;
         public SQLiteConnection NativeConnection;
         public ConnectionWrapper Connection;
 
         public TagDatabase (TaskScheduler scheduler, string filename) {
+            Scheduler = scheduler;
+
             string connectionString = String.Format("Data Source={0}", filename);
             NativeConnection = new SQLiteConnection(connectionString);
             NativeConnection.Open();
@@ -72,9 +72,6 @@ namespace Ndexer {
             _GetLanguageID = Connection.BuildQuery(@"SELECT TagLanguages_ID FROM TagLanguages WHERE TagLanguages_Name = ?");
             _GetSourceFileID = Connection.BuildQuery(@"SELECT SourceFiles_ID FROM SourceFiles WHERE SourceFiles_Path = ?");
             _GetSourceFileTimestamp = Connection.BuildQuery(@"SELECT SourceFiles_Timestamp FROM SourceFiles WHERE SourceFiles_Path = ?");
-            _GetFilters = Connection.BuildQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters");
-            _GetFolders = Connection.BuildQuery(@"SELECT Folders_ID, Folders_Path FROM Folders");
-            _GetSourceFiles = Connection.BuildQuery(@"SELECT SourceFiles_ID, SourceFiles_Path, SourceFiles_Timestamp FROM SourceFiles");
             _GetPreference = Connection.BuildQuery(@"SELECT Preferences_Value FROM Preferences WHERE Preferences_Name = ?");
             _SetPreference = Connection.BuildQuery(@"INSERT OR REPLACE INTO Preferences (Preferences_Name, Preferences_Value) VALUES (?, ?)");
             _LastInsertID = Connection.BuildQuery(@"SELECT last_insert_rowid()");
@@ -125,10 +122,21 @@ namespace Ndexer {
             );
         }
 
+        public ConnectionWrapper OpenReadConnection () {
+            var conn = new SQLiteConnection(NativeConnection.ConnectionString + ";Read Only=True");
+            conn.Open();
+            return new ConnectionWrapper(
+                Scheduler,
+                conn
+            );
+        }
+
         public IEnumerator<object> GetFilters () {
             var filter = new Filter();
 
-            using (var iter = new DbTaskIterator(_GetFilters)) {
+            using (var conn = OpenReadConnection())
+            using (var query = conn.BuildQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters"))
+            using (var iter = new DbTaskIterator(query)) {
                 yield return iter.Start();
 
                 while (!iter.Disposed) {
@@ -147,7 +155,9 @@ namespace Ndexer {
         public IEnumerator<object> GetFolders () {
             var folder = new Folder();
 
-            using (var iter = new DbTaskIterator(_GetFolders)) {
+            using (var conn = OpenReadConnection())
+            using (var query = conn.BuildQuery(@"SELECT Folders_ID, Folders_Path FROM Folders"))
+            using (var iter = new DbTaskIterator(query)) {
                 yield return iter.Start();
 
                 while (!iter.Disposed) {
@@ -165,7 +175,9 @@ namespace Ndexer {
         public IEnumerator<object> GetSourceFiles () {
             var sf = new SourceFile();
 
-            using (var iter = new DbTaskIterator(_GetSourceFiles)) {
+            using (var conn = OpenReadConnection())
+            using (var query = conn.BuildQuery(@"SELECT SourceFiles_ID, SourceFiles_Path, SourceFiles_Timestamp FROM SourceFiles"))
+            using (var iter = new DbTaskIterator(query)) {
                 yield return iter.Start();
 
                 while (!iter.Disposed) {
@@ -266,12 +278,16 @@ namespace Ndexer {
             yield return rtc;
             var folders = (string[])rtc.Result;
 
-            var sourceFiles = new TaskIterator<SourceFile>(GetSourceFiles());
-            yield return sourceFiles.Start();
+            SourceFile[] sourceFiles;
 
-            while (!sourceFiles.Disposed) {
-                var file = sourceFiles.Current;
+            using (var iterator = new TaskIterator<SourceFile>(GetSourceFiles())) {
+                yield return iterator.Start();
+                var ta = iterator.ToArray();
+                yield return ta;
+                sourceFiles = (SourceFile[])ta.Result;
+            }
 
+            foreach (var file in sourceFiles) {
                 bool validFolder = false;
                 foreach (var folder in folders) {
                     if (file.Path.StartsWith(folder)) {
@@ -284,8 +300,6 @@ namespace Ndexer {
                     yield return new NextValue(
                         new Change { Filename = file.Path, Deleted = true }
                     );
-
-                yield return sourceFiles.MoveNext();
             }
 
             foreach (var folder in folders) {
@@ -450,7 +464,7 @@ namespace Ndexer {
             yield return Connection.ExecuteSQL("DELETE FROM Tags");
         }
 
-        void IDisposable.Dispose () {
+        public void Dispose () {
             Connection.Dispose();
             NativeConnection.Dispose();
         }

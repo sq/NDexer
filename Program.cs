@@ -47,6 +47,7 @@ namespace Ndexer {
         public static SQLiteTransaction Transaction = null;
         public static string TrayCaption;
         public static string DatabasePath;
+        public static List<ConnectionWrapper> ActiveConnections = new List<ConnectionWrapper>();
 
         /// <summary>
         /// The main entry point for the application.
@@ -81,9 +82,8 @@ namespace Ndexer {
                 ContextMenu.Items.Add(
                     "&Search", null,
                     (e, s) => {
-                        var dialog = new SearchDialog(db);
-                        dialog.ShowDialog();
-                        dialog.Dispose();
+                        using (var dialog = new SearchDialog(db))
+                            dialog.ShowDialog();
                     }
                 );
                 ContextMenu.Items.Add("-");
@@ -143,10 +143,15 @@ namespace Ndexer {
         }
 
         public static IEnumerator<object> ExitTask (TagDatabase db) {
-            yield return db.Connection.CommitTransaction();
+            if (Transaction != null)
+                yield return db.Connection.CommitTransaction();
+
+            db.Dispose();
 
             NotifyIcon.Visible = false;
             Application.Exit();
+
+            yield break;
         }
 
         public static IEnumerator<object> AutoShowConfiguration (TagDatabase db, string[] argv) {
@@ -190,8 +195,6 @@ namespace Ndexer {
             using (new ActiveWorker("Compacting index database")) {
                 yield return db.Compact();
             }
-
-            yield return db.Connection.BeginTransaction();
 
             var sourceFiles = new BlockingQueue<string>();
 
@@ -259,7 +262,7 @@ namespace Ndexer {
         }
 
         public static IEnumerator<object> ScanFiles (TagDatabase db, BlockingQueue<string> sourceFiles) {
-            using (new ActiveWorker("Scanning hard disk for changes apple banana orange tomato chocolate raspberry vanilla")) {
+            using (new ActiveWorker("Scanning hard disk for changes")) {
                 var changeSet = new TaskIterator<TagDatabase.Change>(
                     db.UpdateFileListAndGetChangeSet()
                 );
