@@ -104,13 +104,14 @@ namespace Ndexer {
                 lvResults.VirtualListSize = 0;
                 lvResults.Columns.Clear();
                 lvResults.Columns.AddRange(columns);
-                lvResults_SizeChanged(null, EventArgs.Empty);
             }
             
             lvResults.VirtualListSize = items.Length;
 
             if ((lvResults.SelectedIndices.Count == 0) && (items.Length > 0))
                 lvResults.SelectedIndices.Add(0);
+
+            lvResults_SizeChanged(null, EventArgs.Empty);
         }
 
         private DbTaskIterator BuildQuery (SearchMode searchMode, string searchText) {
@@ -222,9 +223,12 @@ namespace Ndexer {
         }
 
         private void lvResults_SizeChanged (object sender, EventArgs e) {
-            int totalSize = lvResults.ClientSize.Width - 2;
-            for (int i = 0; i < lvResults.Columns.Count; i++)
-                lvResults.Columns[i].Width = (lvResults.Columns[i].Tag as ColumnInfo).CalculateWidth(totalSize);
+            int totalSize = lvResults.ClientSize.Width - 3;
+            for (int i = 0; i < lvResults.Columns.Count; i++) {
+                int newWidth = (lvResults.Columns[i].Tag as ColumnInfo).CalculateWidth(totalSize);
+                if (lvResults.Columns[i].Width != newWidth)
+                    lvResults.Columns[i].Width = newWidth;
+            }
         }
 
         private void lvResults_DoubleClick (object sender, EventArgs e) {

@@ -17,10 +17,8 @@ namespace Ndexer {
                 return base.VirtualListSize;
             }
             set {
-                /*
                 if (Items.Count > 0)
                     EnsureVisible(0);
-                 */
 
                 base.VirtualListSize = value;
             }
