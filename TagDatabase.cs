@@ -5,6 +5,7 @@ using System.Text;
 using System.Data.SQLite;
 using Squared.Task;
 using System.Data;
+using Squared.Task.Data;
 
 namespace Ndexer {
     public class TagDatabase : IDisposable {
@@ -44,8 +45,7 @@ namespace Ndexer {
             _MakeSourceFileID,
             _DeleteTagsForFile,
             _DeleteSourceFile,
-            _DeleteTagsForFolder,
-            _DeleteSourceFilesForFolder,
+            _DeleteSourceFilesAndTagsForFolder,
             _LastInsertID,
             _InsertTag;
 
@@ -92,14 +92,16 @@ namespace Ndexer {
                 @"SELECT last_insert_rowid()"
             );
             _DeleteTagsForFile = Connection.BuildQuery(@"DELETE FROM Tags WHERE SourceFiles_ID = ?");
-            _DeleteSourceFile = Connection.BuildQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_ID = ?");
-            _DeleteTagsForFolder = Connection.BuildQuery(
+            _DeleteSourceFile = Connection.BuildQuery(
+                @"DELETE FROM Tags WHERE SourceFiles_ID = @p0;" +
+                @"DELETE FROM SourceFiles WHERE SourceFiles_ID = @p0");
+            _DeleteSourceFilesAndTagsForFolder = Connection.BuildQuery(
                 @"DELETE FROM Tags WHERE " +
                 @"Tags.SourceFiles_ID IN ( " +
                 @"SELECT SourceFiles_ID FROM SourceFiles WHERE " +
-                @"SourceFiles.SourceFiles_Path LIKE ? )"
+                @"SourceFiles.SourceFiles_Path LIKE ? );" +
+                @"DELETE FROM SourceFiles WHERE SourceFiles_Path LIKE ?"
             );
-            _DeleteSourceFilesForFolder = Connection.BuildQuery(@"DELETE FROM SourceFiles WHERE SourceFiles_Path LIKE ?");
             _InsertTag = Connection.BuildQuery(
                 @"INSERT INTO Tags (" +
                 @"Tags_Name, SourceFiles_ID, Tags_LineNumber, TagKinds_ID, TagContexts_ID, TagLanguages_ID" +
@@ -210,10 +212,8 @@ namespace Ndexer {
             var f = _GetSourceFileID.ExecuteScalar(filename);
             yield return f;
 
-            if (f.Result is long) {
-                yield return _DeleteTagsForFile.ExecuteNonQuery(f.Result);
+            if (f.Result is long)
                 yield return _DeleteSourceFile.ExecuteNonQuery(f.Result);
-            }
         }
 
         public IEnumerator<object> DeleteTagsForFile (string filename) {
@@ -233,15 +233,13 @@ namespace Ndexer {
             yield return f;
 
             if (f.Result is long) {
-                yield return _DeleteTagsForFile.ExecuteNonQuery(f.Result);
                 yield return _DeleteSourceFile.ExecuteNonQuery(f.Result);
             } else {
                 if (!filename.EndsWith("\\"))
                     filename += "\\";
                 filename += "%";
 
-                yield return _DeleteTagsForFolder.ExecuteNonQuery(filename);
-                yield return _DeleteSourceFilesForFolder.ExecuteNonQuery(filename);
+                yield return _DeleteSourceFilesAndTagsForFolder.ExecuteNonQuery(filename);
             }
         }
 
@@ -300,6 +298,8 @@ namespace Ndexer {
                     yield return new NextValue(
                         new Change { Filename = file.Path, Deleted = true }
                     );
+                else
+                    yield return new Yield();
             }
 
             foreach (var folder in folders) {

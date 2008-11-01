@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using System.Data.SQLite;
 using Squared.Task;
+using Squared.Task.Data;
 
 namespace Ndexer {
     public partial class SearchDialog : Form {

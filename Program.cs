@@ -8,10 +8,9 @@ using System.Data.SQLite;
 using Squared.Task;
 using System.Drawing;
 using System.Diagnostics;
-
-using ITask = System.Collections.Generic.IEnumerable<object>;
 using System.Threading;
 using System.Runtime.InteropServices;
+using Squared.Task.Data;
 
 namespace Ndexer {
     public class ActiveWorker : IDisposable {
@@ -44,10 +43,12 @@ namespace Ndexer {
         public static Icon Icon_Monitoring;
         public static Icon Icon_Working_1, Icon_Working_2;
         public static ContextMenuStrip ContextMenu;
-        public static SQLiteTransaction Transaction = null;
+        public static Transaction Transaction = null;
         public static string TrayCaption;
         public static string DatabasePath;
         public static List<ConnectionWrapper> ActiveConnections = new List<ConnectionWrapper>();
+
+        private const int BatchSize = 256;
 
         /// <summary>
         /// The main entry point for the application.
@@ -148,7 +149,7 @@ namespace Ndexer {
 
         public static IEnumerator<object> ExitTask (TagDatabase db) {
             if (Transaction != null)
-                yield return db.Connection.CommitTransaction();
+                yield return Transaction.Commit();
 
             db.Dispose();
 
@@ -272,12 +273,15 @@ namespace Ndexer {
                 );
                 yield return changeSet.Start();
 
+                Transaction transaction = null;
                 int transactionOps = 0;
                 int numChanges = 0;
                 int numDeletes = 0;
                 while (!changeSet.Disposed) {
-                    if (transactionOps == 0)
-                        yield return db.Connection.BeginTransaction();
+                    if (transactionOps == 0) {
+                        transaction = db.Connection.CreateTransaction();
+                        yield return transaction;
+                    }
 
                     var change = changeSet.Current;
                     if (change.Deleted) {
@@ -290,16 +294,17 @@ namespace Ndexer {
                     }
 
                     transactionOps++;
-                    if (transactionOps == 256) {
-                        yield return db.Connection.CommitTransaction();
+                    if (transactionOps == BatchSize) {
+                        yield return transaction.Commit();
+                        transaction = null;
                         transactionOps = 0;
                     }
 
                     yield return changeSet.MoveNext();
                 }
 
-                if (transactionOps > 0)
-                    yield return db.Connection.CommitTransaction();
+                if (transaction != null)
+                    yield return transaction.Commit();
 
                 Console.WriteLine("Disk scan complete. {0} change(s), {1} delete(s).", numChanges, numDeletes);
             }
@@ -340,15 +345,15 @@ namespace Ndexer {
 
             string lastSourceFile = null;
 
-            bool inTransaction = false;
+            Transaction transaction = null;
 
             while (true) {
                 var f = outputTags.Dequeue();
                 yield return f;
 
-                if (!inTransaction) {
-                    yield return db.Connection.BeginTransaction();
-                    inTransaction = true;
+                if (transaction == null) {
+                    transaction = db.Connection.CreateTransaction();
+                    yield return transaction;
                 }
 
                 using (new ActiveWorker("Adding tags to index database")) {
@@ -359,17 +364,21 @@ namespace Ndexer {
 
                     yield return db.AddTag(tag);
 
-                    if ((inTransaction) && (outputTags.Count == 0) && (inputLines.Count == 0) && (sourceFiles.Count == 0)) {
-                        yield return db.Connection.CommitTransaction();
-                        inTransaction = false;
+                    if ((transaction != null) && (outputTags.Count == 0) && (inputLines.Count == 0) && (sourceFiles.Count == 0)) {
+                        yield return transaction.Commit();
+                        transaction = null;
                     }
                 }
             }
         }
 
         public static IEnumerator<object> DeleteSourceFiles (TagDatabase db, string[] filenames) {
-            foreach (string filename in filenames) {
-                yield return db.DeleteSourceFileOrFolder(filename);
+            using (var transaction = db.Connection.CreateTransaction()) {
+                yield return transaction;
+                foreach (string filename in filenames) {
+                    yield return db.DeleteSourceFileOrFolder(filename);
+                }
+                yield return transaction.Commit();
             }
         }
 
