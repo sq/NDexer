@@ -107,6 +107,9 @@ namespace Ndexer {
             }
             
             lvResults.VirtualListSize = items.Length;
+
+            if ((lvResults.SelectedIndices.Count == 0) && (items.Length > 0))
+                lvResults.SelectedIndices.Add(0);
         }
 
         private DbTaskIterator BuildQuery (SearchMode searchMode, string searchText) {
@@ -119,7 +122,7 @@ namespace Ndexer {
                             @"UNION ALL " +
                             @"SELECT * FROM (SELECT Tags_Name, SourceFiles_Path, Tags_LineNumber " +
                             @"FROM Tags_And_SourceFiles WHERE " +
-                            @"Tags_Name GLOB ? LIMIT 500)"
+                            @"Tags_Name GLOB ? LIMIT 1000)"
                         );
                         return new DbTaskIterator(query, searchText, searchText + "?*");
                     }
@@ -133,7 +136,7 @@ namespace Ndexer {
                             @"FROM SourceFiles WHERE " +
                             @"SourceFiles_Path GLOB ?"
                         );
-                        return new DbTaskIterator(query, "*" + searchText, "*" + searchText + "?*");
+                        return new DbTaskIterator(query, @"*\" + searchText, @"*\" + searchText + "?*");
                     }
             }
 
