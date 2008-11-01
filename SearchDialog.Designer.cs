@@ -43,7 +43,7 @@
             this.txtFilter.Location = new System.Drawing.Point(2, 23);
             this.txtFilter.Name = "txtFilter";
             this.txtFilter.Size = new System.Drawing.Size(341, 23);
-            this.txtFilter.TabIndex = 1;
+            this.txtFilter.TabIndex = 0;
             this.txtFilter.TextChanged += new System.EventHandler(this.txtFilter_TextChanged);
             // 
             // sbStatus
@@ -85,7 +85,7 @@
             this.tcFilter.Name = "tcFilter";
             this.tcFilter.SelectedIndex = 0;
             this.tcFilter.Size = new System.Drawing.Size(341, 44);
-            this.tcFilter.TabIndex = 4;
+            this.tcFilter.TabIndex = 2;
             this.tcFilter.SelectedIndexChanged += new System.EventHandler(this.tcFilter_SelectedIndexChanged);
             // 
             // tpFindTags
@@ -124,7 +124,7 @@
             this.lvResults.OwnerDraw = true;
             this.lvResults.ShowGroups = false;
             this.lvResults.Size = new System.Drawing.Size(341, 356);
-            this.lvResults.TabIndex = 3;
+            this.lvResults.TabIndex = 1;
             this.lvResults.UseCompatibleStateImageBehavior = false;
             this.lvResults.View = System.Windows.Forms.View.Details;
             this.lvResults.VirtualMode = true;

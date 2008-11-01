@@ -96,6 +96,10 @@ namespace Ndexer {
 
                 NotifyIcon = new NotifyIcon();
                 NotifyIcon.ContextMenuStrip = ContextMenu;
+                NotifyIcon.DoubleClick += (EventHandler)((s, e) => {
+                    using (var dialog = new SearchDialog(db))
+                        dialog.ShowDialog();
+                });
 
                 Scheduler.Start(
                     RefreshTrayIcon(),
