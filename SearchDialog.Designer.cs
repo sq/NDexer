@@ -45,6 +45,7 @@
             this.txtFilter.Size = new System.Drawing.Size(341, 23);
             this.txtFilter.TabIndex = 0;
             this.txtFilter.TextChanged += new System.EventHandler(this.txtFilter_TextChanged);
+            this.txtFilter.KeyDown += new System.Windows.Forms.KeyEventHandler(this.txtFilter_KeyDown);
             // 
             // sbStatus
             // 

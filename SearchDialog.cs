@@ -315,5 +315,13 @@ namespace Ndexer {
                 TaskExecutionPolicy.RunAsBackgroundTask
             );
         }
+
+        private void txtFilter_KeyDown(object sender, KeyEventArgs e) {
+            if (e.KeyCode == Keys.Enter) {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                lvResults_DoubleClick(null, EventArgs.Empty);
+            }
+        }
     }
 }
