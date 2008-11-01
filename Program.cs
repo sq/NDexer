@@ -365,7 +365,7 @@ namespace Ndexer {
 
                     yield return db.AddTag(tag);
 
-                    if ((transaction != null) && (outputTags.Count == 0) && (inputLines.Count == 0) && (sourceFiles.Count == 0)) {
+                    if ((transaction != null) && (outputTags.Count <= 0) && (inputLines.Count <= 0) && (sourceFiles.Count <= 0)) {
                         yield return transaction.Commit();
                         transaction = null;
                     }

@@ -15,7 +15,8 @@ namespace Ndexer {
         enum SearchMode {
             None = -1,
             FindTags = 0,
-            FindFiles = 1
+            FindFiles = 1,
+            TagsInFile = 2
         }
 
         class ColumnInfo {
@@ -57,6 +58,7 @@ namespace Ndexer {
         private ColumnHeader[] GetColumnsForMode (SearchMode searchMode) {
             switch (searchMode) {
                 case SearchMode.FindTags:
+                case SearchMode.TagsInFile:
                     return new ColumnHeader[] {
                         new ColumnHeader() { 
                             Text = "Tag Name", 
@@ -140,6 +142,14 @@ namespace Ndexer {
                         );
                         return new DbTaskIterator(query, @"*\" + searchText, @"*\" + searchText + "?*");
                     }
+                case SearchMode.TagsInFile: {
+                        var query = Connection.BuildQuery(
+                            @"SELECT Tags_Name, SourceFiles_Path, Tags_LineNumber " +
+                            @"FROM Tags_And_SourceFiles WHERE " +
+                            @"SourceFiles_Path GLOB ? "
+                        );
+                        return new DbTaskIterator(query, @"*\" + searchText);
+                    }
             }
 
             throw new InvalidOperationException();
@@ -169,6 +179,7 @@ namespace Ndexer {
                                 item.Filename = iterator.Current.GetString(0);
                                 break;
                             case SearchMode.FindTags:
+                            case SearchMode.TagsInFile:
                                 item.Name = iterator.Current.GetString(0);
                                 item.Filename = iterator.Current.GetString(1);
                                 item.LineNumber = iterator.Current.GetInt64(2);
@@ -246,6 +257,7 @@ namespace Ndexer {
                             director.BringToFront();
                             break;
                         case SearchMode.FindTags:
+                        case SearchMode.TagsInFile:
                             director.OpenFile(item.Filename, item.LineNumber);
                             director.FindText(item.Name);
                             director.BringToFront();

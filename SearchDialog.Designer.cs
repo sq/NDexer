@@ -32,6 +32,7 @@
             this.tpFindTags = new System.Windows.Forms.TabPage();
             this.tpFindFiles = new System.Windows.Forms.TabPage();
             this.lvResults = new Ndexer.SearchResultListView();
+            this.tpTagsInFile = new System.Windows.Forms.TabPage();
             this.sbStatus.SuspendLayout();
             this.tcFilter.SuspendLayout();
             this.SuspendLayout();
@@ -40,7 +41,7 @@
             // 
             this.txtFilter.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtFilter.Location = new System.Drawing.Point(2, 23);
+            this.txtFilter.Location = new System.Drawing.Point(2, 24);
             this.txtFilter.Name = "txtFilter";
             this.txtFilter.Size = new System.Drawing.Size(341, 23);
             this.txtFilter.TabIndex = 0;
@@ -82,6 +83,7 @@
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.tcFilter.Controls.Add(this.tpFindTags);
             this.tcFilter.Controls.Add(this.tpFindFiles);
+            this.tcFilter.Controls.Add(this.tpTagsInFile);
             this.tcFilter.Location = new System.Drawing.Point(2, 2);
             this.tcFilter.Name = "tcFilter";
             this.tcFilter.SelectedIndex = 0;
@@ -119,7 +121,7 @@
             this.lvResults.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
             this.lvResults.HideSelection = false;
             this.lvResults.LabelWrap = false;
-            this.lvResults.Location = new System.Drawing.Point(2, 48);
+            this.lvResults.Location = new System.Drawing.Point(2, 49);
             this.lvResults.MultiSelect = false;
             this.lvResults.Name = "lvResults";
             this.lvResults.OwnerDraw = true;
@@ -133,6 +135,16 @@
             this.lvResults.DoubleClick += new System.EventHandler(this.lvResults_DoubleClick);
             this.lvResults.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.lvResults_RetrieveVirtualItem);
             this.lvResults.DrawSubItem += new System.Windows.Forms.DrawListViewSubItemEventHandler(this.lvResults_DrawSubItem);
+            // 
+            // tpTagsInFile
+            // 
+            this.tpTagsInFile.Location = new System.Drawing.Point(4, 22);
+            this.tpTagsInFile.Name = "tpTagsInFile";
+            this.tpTagsInFile.Padding = new System.Windows.Forms.Padding(3);
+            this.tpTagsInFile.Size = new System.Drawing.Size(333, 18);
+            this.tpTagsInFile.TabIndex = 2;
+            this.tpTagsInFile.Text = "Tags in File";
+            this.tpTagsInFile.UseVisualStyleBackColor = true;
             // 
             // SearchDialog
             // 
@@ -167,6 +179,7 @@
         private System.Windows.Forms.TabControl tcFilter;
         private System.Windows.Forms.TabPage tpFindTags;
         private System.Windows.Forms.TabPage tpFindFiles;
+        private System.Windows.Forms.TabPage tpTagsInFile;
     }
 }
 
