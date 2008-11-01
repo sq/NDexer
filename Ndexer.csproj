@@ -62,7 +62,6 @@
     <Compile Include="ConfigurationDialog.Designer.cs">
       <DependentUpon>ConfigurationDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="DiskMonitor.cs" />
     <Compile Include="SearchResultListView.cs">
       <SubType>Component</SubType>
     </Compile>

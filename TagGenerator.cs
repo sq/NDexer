@@ -5,6 +5,7 @@ using System.Text;
 using System.Diagnostics;
 using Squared.Task;
 using System.Threading;
+using Squared.Task.IO;
 
 namespace Ndexer {
     internal struct ChildProcess : IDisposable {
@@ -87,7 +88,7 @@ namespace Ndexer {
                             (Action<string>)(
                                 (fn_) => {
                                     _process.StandardInput.WriteLine(fn_);
-                                    process.StandardInput.Flush();
+                                    _process.StandardInput.Flush();
                                 }
                             ),
                             fn

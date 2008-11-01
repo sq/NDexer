@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Runtime.InteropServices;
 using Squared.Task.Data;
+using Squared.Task.IO;
 
 namespace Ndexer {
     public class ActiveWorker : IDisposable {
@@ -393,7 +394,10 @@ namespace Ndexer {
 
             DiskMonitor monitor = new DiskMonitor(
                 folders,
-                filters
+                filters,
+                new string[] {
+                    System.Text.RegularExpressions.Regex.Escape(@"\.svn\")
+                }
             );
             monitor.Monitoring = true;
 
