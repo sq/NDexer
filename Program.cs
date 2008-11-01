@@ -268,9 +268,13 @@ namespace Ndexer {
                 );
                 yield return changeSet.Start();
 
+                int transactionOps = 0;
                 int numChanges = 0;
                 int numDeletes = 0;
                 while (!changeSet.Disposed) {
+                    if (transactionOps == 0)
+                        yield return db.Connection.BeginTransaction();
+
                     var change = changeSet.Current;
                     if (change.Deleted) {
                         yield return db.DeleteSourceFile(change.Filename);
@@ -281,8 +285,17 @@ namespace Ndexer {
                         numChanges += 1;
                     }
 
+                    transactionOps++;
+                    if (transactionOps == 256) {
+                        yield return db.Connection.CommitTransaction();
+                        transactionOps = 0;
+                    }
+
                     yield return changeSet.MoveNext();
                 }
+
+                if (transactionOps > 0)
+                    yield return db.Connection.CommitTransaction();
 
                 Console.WriteLine("Disk scan complete. {0} change(s), {1} delete(s).", numChanges, numDeletes);
             }
@@ -323,9 +336,16 @@ namespace Ndexer {
 
             string lastSourceFile = null;
 
+            bool inTransaction = false;
+
             while (true) {
                 var f = outputTags.Dequeue();
                 yield return f;
+
+                if (!inTransaction) {
+                    yield return db.Connection.BeginTransaction();
+                    inTransaction = true;
+                }
 
                 using (new ActiveWorker("Adding tags to index database")) {
                     var tag = (Tag)f.Result;
@@ -335,10 +355,9 @@ namespace Ndexer {
 
                     yield return db.AddTag(tag);
 
-                    if ((outputTags.Count == 0) && (inputLines.Count == 0) && (sourceFiles.Count == 0)) {
-                        Console.WriteLine("Committing transaction because work queues are empty.");
+                    if ((inTransaction) && (outputTags.Count == 0) && (inputLines.Count == 0) && (sourceFiles.Count == 0)) {
                         yield return db.Connection.CommitTransaction();
-                        yield return db.Connection.BeginTransaction();
+                        inTransaction = false;
                     }
                 }
             }
