@@ -124,9 +124,9 @@ namespace Ndexer {
                             @"FROM Tags_And_SourceFiles WHERE " +
                             @"Tags_Name = ? " +
                             @"UNION ALL " +
-                            @"SELECT * FROM (SELECT Tags_Name, SourceFiles_Path, Tags_LineNumber " +
+                            @"SELECT Tags_Name, SourceFiles_Path, Tags_LineNumber " +
                             @"FROM Tags_And_SourceFiles WHERE " +
-                            @"Tags_Name GLOB ? LIMIT 1000)"
+                            @"Tags_Name GLOB ?"
                         );
                         return new DbTaskIterator(query, searchText, searchText + "?*");
                     }
@@ -339,6 +339,10 @@ namespace Ndexer {
                 e.SuppressKeyPress = true;
                 lvResults_DoubleClick(null, EventArgs.Empty);
             }
+        }
+
+        private void SearchDialog_FormClosed (object sender, FormClosedEventArgs e) {
+            this.Dispose();
         }
     }
 }

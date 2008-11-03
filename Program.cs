@@ -84,8 +84,16 @@ namespace Ndexer {
                 ContextMenu.Items.Add(
                     "&Search", null,
                     (e, s) => {
-                        using (var dialog = new SearchDialog(db))
-                            dialog.ShowDialog();
+                        var dialog = new SearchDialog(db);
+                        dialog.Show();
+                    }
+                );
+                ContextMenu.Items.Add(
+                    "&Configure", null,
+                    (e, s) => {
+                        using (var dialog = new ConfigurationDialog(db))
+                            if (dialog.ShowDialog() == DialogResult.OK)
+                                Scheduler.Start(RestartTask(db));
                     }
                 );
                 ContextMenu.Items.Add("-");
@@ -136,28 +144,31 @@ namespace Ndexer {
             return GetExecutablePath() + @"\data\";
         }
 
-        public static void ShowSearch (TagDatabase db) {
-            var dlg = new SearchDialog(db);
-            dlg.ShowDialog();
-            dlg.Dispose();
-        }
-
         public static void ShowConfiguration (TagDatabase db) {
             var dlg = new ConfigurationDialog(db);
             dlg.ShowDialog();
             dlg.Dispose();
         }
 
-        public static IEnumerator<object> ExitTask (TagDatabase db) {
+        private static IEnumerator<object> TeardownTask (TagDatabase db) {
             if (Transaction != null)
                 yield return Transaction.Commit();
 
             db.Dispose();
 
             NotifyIcon.Visible = false;
-            Application.Exit();
+        }
 
-            yield break;
+        public static IEnumerator<object> RestartTask (TagDatabase db) {
+            yield return TeardownTask(db);
+
+            Application.Restart();
+        }
+
+        public static IEnumerator<object> ExitTask (TagDatabase db) {
+            yield return TeardownTask(db);
+
+            Application.Exit();
         }
 
         public static IEnumerator<object> AutoShowConfiguration (TagDatabase db, string[] argv) {

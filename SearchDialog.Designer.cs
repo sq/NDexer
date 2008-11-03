@@ -31,8 +31,8 @@
             this.tcFilter = new System.Windows.Forms.TabControl();
             this.tpFindTags = new System.Windows.Forms.TabPage();
             this.tpFindFiles = new System.Windows.Forms.TabPage();
-            this.lvResults = new Ndexer.SearchResultListView();
             this.tpTagsInFile = new System.Windows.Forms.TabPage();
+            this.lvResults = new Ndexer.SearchResultListView();
             this.sbStatus.SuspendLayout();
             this.tcFilter.SuspendLayout();
             this.SuspendLayout();
@@ -111,6 +111,16 @@
             this.tpFindFiles.Text = "Find Files";
             this.tpFindFiles.UseVisualStyleBackColor = true;
             // 
+            // tpTagsInFile
+            // 
+            this.tpTagsInFile.Location = new System.Drawing.Point(4, 22);
+            this.tpTagsInFile.Name = "tpTagsInFile";
+            this.tpTagsInFile.Padding = new System.Windows.Forms.Padding(3);
+            this.tpTagsInFile.Size = new System.Drawing.Size(333, 18);
+            this.tpTagsInFile.TabIndex = 2;
+            this.tpTagsInFile.Text = "Tags in File";
+            this.tpTagsInFile.UseVisualStyleBackColor = true;
+            // 
             // lvResults
             // 
             this.lvResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
@@ -136,16 +146,6 @@
             this.lvResults.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.lvResults_RetrieveVirtualItem);
             this.lvResults.DrawSubItem += new System.Windows.Forms.DrawListViewSubItemEventHandler(this.lvResults_DrawSubItem);
             // 
-            // tpTagsInFile
-            // 
-            this.tpTagsInFile.Location = new System.Drawing.Point(4, 22);
-            this.tpTagsInFile.Name = "tpTagsInFile";
-            this.tpTagsInFile.Padding = new System.Windows.Forms.Padding(3);
-            this.tpTagsInFile.Size = new System.Drawing.Size(333, 18);
-            this.tpTagsInFile.TabIndex = 2;
-            this.tpTagsInFile.Text = "Tags in File";
-            this.tpTagsInFile.UseVisualStyleBackColor = true;
-            // 
             // SearchDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
@@ -160,6 +160,7 @@
             this.MaximizeBox = false;
             this.Name = "SearchDialog";
             this.Text = "Search";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.SearchDialog_FormClosed);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SearchDialog_FormClosing);
             this.sbStatus.ResumeLayout(false);
             this.sbStatus.PerformLayout();
