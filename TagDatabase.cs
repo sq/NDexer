@@ -8,7 +8,7 @@ using System.Data;
 using Squared.Task.Data;
 
 namespace Ndexer {
-    public class TagDatabase : IDisposable {
+    public class TagDatabase {
         public struct Filter {
             public long ID;
             public string Pattern;
@@ -443,7 +443,7 @@ namespace Ndexer {
                 yield return rtc;
                 result = rtc.Result;
 
-                if (resultCache.Count > 256)
+                if (resultCache.Count > 512)
                     resultCache.Clear();
 
                 resultCache[argument] = result;
@@ -480,8 +480,9 @@ namespace Ndexer {
             yield return Connection.ExecuteSQL("DELETE FROM Tags");
         }
 
-        public void Dispose () {
-            Connection.Dispose();
+        public IEnumerator<object> Dispose () {
+            yield return Connection.Dispose();
+
             NativeConnection.Dispose();
         }
     }

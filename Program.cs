@@ -75,11 +75,11 @@ namespace Ndexer {
         public static Icon Icon_Monitoring;
         public static Icon Icon_Working_1, Icon_Working_2;
         public static ContextMenuStrip ContextMenu;
-        public static Transaction Transaction = null;
         public static string TrayCaption;
         public static string DatabasePath;
         public static Dictionary<string, TagGroup> TagGroups = new Dictionary<string, TagGroup>();
         public static int TotalFilesIndexed = 0;
+        public static int TotalFilesCommitted = 0;
 
         private const int BatchSize = 256;
 
@@ -107,57 +107,57 @@ namespace Ndexer {
 
             Scheduler = new TaskScheduler(JobQueue.WindowsMessageBased);
 
-            using (var db = new TagDatabase(Scheduler, DatabasePath)) {
-                Icon_Monitoring = Icon.FromHandle(Properties.Resources.database_monitoring.GetHicon());
-                Icon_Working_1 = Icon.FromHandle(Properties.Resources.database_working_1.GetHicon());
-                Icon_Working_2 = Icon.FromHandle(Properties.Resources.database_working_2.GetHicon());
+            var db = new TagDatabase(Scheduler, DatabasePath);
+            Icon_Monitoring = Icon.FromHandle(Properties.Resources.database_monitoring.GetHicon());
+            Icon_Working_1 = Icon.FromHandle(Properties.Resources.database_working_1.GetHicon());
+            Icon_Working_2 = Icon.FromHandle(Properties.Resources.database_working_2.GetHicon());
 
-                ContextMenu = new ContextMenuStrip();
-                ContextMenu.Items.Add(
-                    "&Search", null,
-                    (e, s) => {
-                        Scheduler.Start(ShowSearchTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
-                    }
-                );
-                ContextMenu.Items.Add(
-                    "&Configure", null,
-                    (e, s) => {
-                        using (var dialog = new ConfigurationDialog(db))
-                            if (dialog.ShowDialog() == DialogResult.OK)
-                                Scheduler.Start(RestartTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
-                    }
-                );
-                ContextMenu.Items.Add("-");
-                ContextMenu.Items.Add(
-                    "E&xit", null,
-                    (e, s) => {
-                        Scheduler.Start(ExitTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
-                    }
-                );
-
-                NotifyIcon = new NotifyIcon();
-                NotifyIcon.ContextMenuStrip = ContextMenu;
-                NotifyIcon.DoubleClick += (EventHandler)((s, e) => {
+            ContextMenu = new ContextMenuStrip();
+            ContextMenu.Items.Add(
+                "&Search", null,
+                (e, s) => {
                     Scheduler.Start(ShowSearchTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
-                });
-
-                Scheduler.Start(
-                    RefreshTrayIcon(),
-                    TaskExecutionPolicy.RunAsBackgroundTask
-                );
-
-                Scheduler.Start(
-                    MainTask(db, argv),
-                    TaskExecutionPolicy.RunAsBackgroundTask
-                );
-
-                Application.Run();
-
-                if (Transaction != null) {
-                    Transaction.Commit();
-                    Transaction.Dispose();
                 }
-            }
+            );
+            ContextMenu.Items.Add(
+                "&Configure", null,
+                (e, s) => {
+                    using (var dialog = new ConfigurationDialog(db))
+                        if (dialog.ShowDialog() == DialogResult.OK)
+                            Scheduler.Start(RestartTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
+                }
+            );
+            ContextMenu.Items.Add(
+                "&Rebuild Index", null,
+                (e, s) => {
+                    Scheduler.Start(ConfirmRebuildIndexTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
+                }
+            );
+            ContextMenu.Items.Add("-");
+            ContextMenu.Items.Add(
+                "E&xit", null,
+                (e, s) => {
+                    Scheduler.Start(ExitTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
+                }
+            );
+
+            NotifyIcon = new NotifyIcon();
+            NotifyIcon.ContextMenuStrip = ContextMenu;
+            NotifyIcon.DoubleClick += (EventHandler)((s, e) => {
+                Scheduler.Start(ShowSearchTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
+            });
+
+            Scheduler.Start(
+                RefreshTrayIcon(),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
+
+            Scheduler.Start(
+                MainTask(db, argv),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
+
+            Application.Run();
         }
 
         public static string GetExecutablePath() {
@@ -172,6 +172,19 @@ namespace Ndexer {
 
         public static string GetDataPath () {
             return GetExecutablePath() + @"\data\";
+        }
+
+        public static IEnumerator<object> ConfirmRebuildIndexTask (TagDatabase db) {
+            if (MessageBox.Show(
+                        "Are you sure you want to rebuild the index? This will take a while!", "Rebuild Index",
+                        MessageBoxButtons.YesNo, MessageBoxIcon.Question
+                    ) == DialogResult.Yes) {
+                var trans = db.Connection.CreateTransaction();
+                yield return trans;
+                yield return db.Connection.ExecuteSQL("DELETE FROM Tags; DELETE FROM SourceFiles; DELETE FROM TagContexts; DELETE FROM TagKinds; DELETE FROM TagLanguages");
+                yield return trans.Commit();
+                yield return RestartTask(db);
+            }
         }
 
         public static void ShowConfiguration (TagDatabase db) {
@@ -189,10 +202,7 @@ namespace Ndexer {
         }
 
         private static IEnumerator<object> TeardownTask (TagDatabase db) {
-            if (Transaction != null)
-                yield return Transaction.Commit();
-
-            db.Dispose();
+            yield return db.Dispose();
 
             NotifyIcon.Visible = false;
         }
@@ -284,35 +294,29 @@ namespace Ndexer {
             while (true) {
                 toggle = !toggle;
 
-                try {
-
-                    Icon theIcon;
-                    string statusMessage = "Idle";
-                    int numWorkers = 0;
+                Icon theIcon;
+                string statusMessage = "Idle";
+                int numWorkers = 0;
+                lock (ActiveWorkers)
+                    numWorkers = ActiveWorkers.Count;
+                if (numWorkers > 0) {
+                    theIcon = (toggle) ? Icon_Working_1 : Icon_Working_2;
                     lock (ActiveWorkers)
-                        numWorkers = ActiveWorkers.Count;
-                    if (numWorkers > 0) {
-                        theIcon = (toggle) ? Icon_Working_1 : Icon_Working_2;
-                        lock (ActiveWorkers)
-                            statusMessage = ActiveWorkers[0].Description;
-                    } else {
-                        theIcon = Icon_Monitoring;
-                    }
-
-                    TrayCaption = String.Format("NDexer ({0}) - {1}", System.IO.Path.GetFileName(DatabasePath), statusMessage);
-                    if (TrayCaption.Length >= 64)
-                        TrayCaption = TrayCaption.Substring(0, 60) + "...";
-
-                    if (NotifyIcon.Icon != theIcon)
-                        NotifyIcon.Icon = theIcon;
-                    if (NotifyIcon.Text != TrayCaption)
-                        NotifyIcon.Text = TrayCaption;
-                    if (NotifyIcon.Visible == false)
-                        NotifyIcon.Visible = true;
-                } catch (Exception ex) {
-                    Console.WriteLine("Error in RefreshTrayIcon: {0}", ex.ToString());
-                    throw;
+                        statusMessage = ActiveWorkers[0].Description;
+                } else {
+                    theIcon = Icon_Monitoring;
                 }
+
+                TrayCaption = String.Format("NDexer ({0}) - {1}", System.IO.Path.GetFileName(DatabasePath), statusMessage);
+                if (TrayCaption.Length >= 64)
+                    TrayCaption = TrayCaption.Substring(0, 60) + "...";
+
+                if (NotifyIcon.Icon != theIcon)
+                    NotifyIcon.Icon = theIcon;
+                if (NotifyIcon.Text != TrayCaption)
+                    NotifyIcon.Text = TrayCaption;
+                if (NotifyIcon.Visible == false)
+                    NotifyIcon.Visible = true;
 
                 yield return new Sleep(0.5);
             }
@@ -346,7 +350,7 @@ namespace Ndexer {
 
                 yield return transaction.Commit();
 
-                Console.WriteLine("Disk scan complete. {0} change(s), {1} delete(s).", numChanges, numDeletes);
+                System.Diagnostics.Debug.WriteLine(String.Format("Disk scan complete. {0} change(s), {1} delete(s).", numChanges, numDeletes));
             }
         }
 
@@ -381,6 +385,19 @@ namespace Ndexer {
                 TaskExecutionPolicy.RunAsBackgroundTask
             );
 
+            Func<bool> shouldFlush = () => {
+                return (outputTags.Count <= 0) && (inputLines.Count <= 0) && (sourceFiles.Count <= 0);
+            };
+
+            Func<int> getFlushThreshold = () => {
+                return TotalFilesCommitted;
+            };
+
+            Scheduler.Start(
+                FlushPendingTagGroups(db, shouldFlush, getFlushThreshold),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
+
             string lastSourceFile = null;
             TagGroup tagGroup = null;
             while (true) {
@@ -391,6 +408,7 @@ namespace Ndexer {
                     var tag = (Tag)f.Result;
                     if (tag.SourceFile != lastSourceFile) {
                         if (tagGroup != null) {
+                            Interlocked.Increment(ref TotalFilesCommitted);
                             TagGroups.Remove(tagGroup.Filename);
                             yield return tagGroup.Commit(db);
                         }
@@ -403,20 +421,31 @@ namespace Ndexer {
                 }
 
                 if ((outputTags.Count <= 0) && (inputLines.Count <= 0) && (sourceFiles.Count <= 0)) {
-                    int maxIndex = Int32.MaxValue;
-                    if ((tagGroup != null) && (tagGroup.Count > 0)) {
+                    if (tagGroup != null)
                         yield return tagGroup.Commit(db);
-                        maxIndex = tagGroup.Index;
-                    }
+                }
+            }
+        }
+
+        public static IEnumerator<object> FlushPendingTagGroups (TagDatabase db, Func<bool> shouldFlush, Func<int> getFlushThreshold) {
+            while (true) {
+                if (shouldFlush()) {
+                    int maxIndex = getFlushThreshold();
 
                     foreach (string key in TagGroups.Keys.ToArray()) {
-                        var item = TagGroups[key];
-                        if (item.Index < maxIndex) {
-                            yield return item.Commit(db);
-                            TagGroups.Remove(key);
+                        TagGroup item = null;
+                        if (TagGroups.TryGetValue(key, out item)) {
+                            if (item.Index < maxIndex) {
+                                Interlocked.Increment(ref TotalFilesCommitted);
+                                TagGroups.Remove(key);
+                                yield return item.Commit(db);
+                            }
                         }
                     }
+                } else {
                 }
+
+                yield return new Sleep(15.0);
             }
         }
 
@@ -430,7 +459,24 @@ namespace Ndexer {
             }
         }
 
+        public static IEnumerator<object> PeriodicGC () {
+            while (true) {
+                long preUsage = System.GC.GetTotalMemory(false);
+                System.GC.Collect();
+                long postUsage = System.GC.GetTotalMemory(false);
+
+                System.Diagnostics.Debug.WriteLine(String.Format("Periodic GC complete. Usage {0} -> {1}.", preUsage, postUsage));
+
+                yield return new Sleep(60.0 * 5);
+            }
+        }
+
         public static IEnumerator<object> MonitorForChanges (TagDatabase db, BlockingQueue<string> sourceFiles) {
+            Scheduler.Start(
+                PeriodicGC(),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
+
             var rtc = new RunToCompletion(db.GetFilterPatterns());
             yield return rtc;
             var filters = (string[])rtc.Result;
@@ -451,7 +497,7 @@ namespace Ndexer {
             var changedFiles = new List<string>();
             var deletedFiles = new List<string>();
             long lastDiskChange = 0;
-            long updateInterval = TimeSpan.FromSeconds(15).Ticks;
+            long updateInterval = TimeSpan.FromSeconds(30).Ticks;
 
             while (true) {
                 long now = DateTime.Now.Ticks;
