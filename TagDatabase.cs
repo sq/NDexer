@@ -99,8 +99,8 @@ namespace Ndexer {
                 @"DELETE FROM Tags WHERE " +
                 @"Tags.SourceFiles_ID IN ( " +
                 @"SELECT SourceFiles_ID FROM SourceFiles WHERE " +
-                @"SourceFiles.SourceFiles_Path LIKE ? );" +
-                @"DELETE FROM SourceFiles WHERE SourceFiles_Path LIKE ?"
+                @"SourceFiles.SourceFiles_Path LIKE @p0 );" +
+                @"DELETE FROM SourceFiles WHERE SourceFiles_Path LIKE @p0"
             );
             _InsertTag = Connection.BuildQuery(
                 @"INSERT INTO Tags (" +
@@ -110,6 +110,10 @@ namespace Ndexer {
                 @");" +
                 @"SELECT last_insert_rowid()"
             );
+        }
+
+        public IEnumerator<object> Initialize () {
+            yield return Connection.ExecuteSQL("PRAGMA synchronous=0");
         }
 
         public IEnumerator<object> Compact () {
@@ -124,19 +128,23 @@ namespace Ndexer {
             );
         }
 
-        public ConnectionWrapper OpenReadConnection () {
+        public IEnumerator<object> OpenReadConnection () {
             var conn = new SQLiteConnection(NativeConnection.ConnectionString + ";Read Only=True");
-            conn.Open();
-            return new ConnectionWrapper(
+            yield return Future.RunInThread((Action)conn.Open);
+            var result = new ConnectionWrapper(
                 Scheduler,
                 conn
             );
+            yield return new Result(result);
         }
 
         public IEnumerator<object> GetFilters () {
             var filter = new Filter();
 
-            using (var conn = OpenReadConnection())
+            var rtc = new RunToCompletion(OpenReadConnection());
+            yield return rtc;
+
+            using (var conn = (ConnectionWrapper)rtc.Result)
             using (var query = conn.BuildQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters"))
             using (var iter = new DbTaskIterator(query)) {
                 yield return iter.Start();
@@ -157,7 +165,10 @@ namespace Ndexer {
         public IEnumerator<object> GetFolders () {
             var folder = new Folder();
 
-            using (var conn = OpenReadConnection())
+            var rtc = new RunToCompletion(OpenReadConnection());
+            yield return rtc;
+
+            using (var conn = (ConnectionWrapper)rtc.Result)
             using (var query = conn.BuildQuery(@"SELECT Folders_ID, Folders_Path FROM Folders"))
             using (var iter = new DbTaskIterator(query)) {
                 yield return iter.Start();
@@ -177,7 +188,10 @@ namespace Ndexer {
         public IEnumerator<object> GetSourceFiles () {
             var sf = new SourceFile();
 
-            using (var conn = OpenReadConnection())
+            var rtc = new RunToCompletion(OpenReadConnection());
+            yield return rtc;
+
+            using (var conn = (ConnectionWrapper)rtc.Result)
             using (var query = conn.BuildQuery(@"SELECT SourceFiles_ID, SourceFiles_Path, SourceFiles_Timestamp FROM SourceFiles"))
             using (var iter = new DbTaskIterator(query)) {
                 yield return iter.Start();
@@ -428,17 +442,19 @@ namespace Ndexer {
                 var rtc = new RunToCompletion(task(argument));
                 yield return rtc;
                 result = rtc.Result;
+
                 if (resultCache.Count > 256)
                     resultCache.Clear();
 
                 resultCache[argument] = result;
+                yield return new Result(result);
             }
         }
 
         public IEnumerator<object> AddTag (Tag tag) {
             var rtc = new RunToCompletion(MemoizedGetID(GetSourceFileID, tag.SourceFile));
             yield return rtc;
-            var sourceFileID = Convert.ToInt64(rtc.Result);
+            var sourceFileID = (Int64)(rtc.Result);
 
             rtc = new RunToCompletion(MemoizedGetID(GetKindID, tag.Kind));
             yield return rtc;

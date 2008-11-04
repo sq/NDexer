@@ -30,7 +30,6 @@ namespace Ndexer {
             public long LineNumber;
         }
 
-        TagDatabase Tags;
         ConnectionWrapper Connection;
         Future ActiveSearch = null;
         Future ActiveQueue = null;
@@ -42,9 +41,8 @@ namespace Ndexer {
         SearchResult[] SearchResults = new SearchResult[0];
         SearchMode DisplayedSearchMode = SearchMode.None;
 
-        public SearchDialog (TagDatabase tags) {
-            Tags = tags;
-            Connection = tags.OpenReadConnection();
+        public SearchDialog (ConnectionWrapper connection) {
+            Connection = connection;
 
             InitializeComponent();
 

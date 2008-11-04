@@ -57,8 +57,10 @@ namespace Ndexer {
                     filename = (string)f.Result;
                 }
 
-                using (new ActiveWorker("Sending filenames to indexer")) {
-                    yield return onNextFile(filename);
+                using (new ActiveWorker("Updating index")) {
+                    var f = onNextFile(filename);
+                    if (f != null)
+                        yield return f;
 
                     if (pendingLine != null)
                         yield return pendingLine;
