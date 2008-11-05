@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using Squared.Task.Data;
 using Squared.Task.IO;
 using System.Reflection;
+using System.Text;
 
 namespace Ndexer {
     public class ActiveWorker : IDisposable {
@@ -379,12 +380,31 @@ namespace Ndexer {
         }
 
         public static IEnumerator<object> UpdateIndex (BlockingQueue<string> sourceFiles) {
+            string langmap;
+            {
+                var buffer = new StringBuilder();
+                var iter = new TaskIterator<TagDatabase.Filter>(Database.GetFilters());
+                yield return iter.Start();
+                while (!iter.Disposed) {
+                    var filter = iter.Current;
+
+                    if (buffer.Length > 0)
+                        buffer.Append(",");
+                    buffer.Append(filter.Language);
+                    buffer.Append(":+");
+                    buffer.Append(filter.Pattern.Replace("*", "").Replace("?", ""));
+
+                    yield return iter.MoveNext();
+                }
+                langmap = buffer.ToString();
+            }
+
             string lastSourceFile = null;
             TagGroup[] currentTagGroup = new TagGroup[] { null };
 
             var gen = new TagGenerator(
                 GetCTagsPath(),
-                "--filter=yes --filter-terminator=[[<>]]\n --fields=+afmikKlnsStz --sort=no"
+                "--filter=yes --fields=+afmikKlnsStz --sort=no --langmap=" + langmap
             );
 
             var onNextFile = (Func<string, object>)(
