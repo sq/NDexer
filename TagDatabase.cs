@@ -50,6 +50,7 @@ namespace Ndexer {
             _InsertTag;
 
         private Dictionary<string, Dictionary<string, object>> _MemoizationCache = new Dictionary<string, Dictionary<string, object>>();
+        private Dictionary<string, object> _PreferenceCache = new Dictionary<string, object>();
 
         public TaskScheduler Scheduler;
         public SQLiteConnection NativeConnection;
@@ -210,14 +211,21 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> GetPreference (string name) {
-            var f = _GetPreference.ExecuteScalar(name);
-            yield return f;
-            yield return new Result(f.Result);
+            object result;
+            if (!_PreferenceCache.TryGetValue(name, out result)) {
+                var f = _GetPreference.ExecuteScalar(name);
+                yield return f;
+                result = f.Result;
+                _PreferenceCache[name] = result;
+            }
+
+            yield return new Result(result);
         }
 
         public IEnumerator<object> SetPreference (string name, string value) {
             var f = _SetPreference.ExecuteScalar(name, value);
             yield return f;
+            _PreferenceCache[name] = value;
         }
 
         public IEnumerator<object> DeleteSourceFile (string filename) {

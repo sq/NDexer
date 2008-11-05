@@ -12,6 +12,7 @@ using System.Threading;
 using System.Runtime.InteropServices;
 using Squared.Task.Data;
 using Squared.Task.IO;
+using System.Reflection;
 
 namespace Ndexer {
     public class ActiveWorker : IDisposable {
@@ -83,7 +84,7 @@ namespace Ndexer {
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
-        [MTAThread]
+        [STAThread]
         static void Main (string[] argv) {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
@@ -189,6 +190,27 @@ namespace Ndexer {
             var dlg = new ConfigurationDialog(Database);
             dlg.ShowDialog();
             dlg.Dispose();
+        }
+
+        public static string[] GetDirectorNames () {
+            var results = new List<string>();
+            var types = Assembly.GetExecutingAssembly().GetTypes();
+            var baseType = typeof(Director);
+            foreach (var type in types) {
+                if (type.IsSubclassOf(baseType) && type.Name.EndsWith("Director"))
+                    results.Add(type.Name.Replace("Director", ""));
+            }
+            results.Sort();
+            return results.ToArray();
+        }
+
+        public static IBasicDirector GetDirector () {
+            var editorName = (string)Scheduler.WaitFor(Database.GetPreference("TextEditor.Name"));
+            var editorPath = (string)Scheduler.WaitFor(Database.GetPreference("TextEditor.Location"));
+            var directorType = Type.GetType(String.Format("Ndexer.{0}Director", editorName), true, true);
+            var constructor = directorType.GetConstructor(new Type[] { typeof(string) });
+            var director = (IBasicDirector)constructor.Invoke(new object[] { editorPath });
+            return director;
         }
 
         public static IEnumerator<object> ShowSearchTask () {

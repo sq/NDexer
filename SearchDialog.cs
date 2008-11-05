@@ -259,7 +259,7 @@ namespace Ndexer {
                 return;
             }
             try {
-                using (var director = new SciTEDirector()) {
+                using (var director = Program.GetDirector()) {
                     switch (DisplayedSearchMode) {
                         case SearchMode.FindFiles:
                             director.OpenFile(item.Filename);
@@ -269,7 +269,8 @@ namespace Ndexer {
                         case SearchMode.TagsInFile:
                         case SearchMode.TagsInContext:
                             director.OpenFile(item.Filename, item.LineNumber);
-                            director.FindText(item.Name);
+                            if (director is IAdvancedDirector)
+                                ((IAdvancedDirector)director).FindText(item.Name);
                             director.BringToFront();
                             break;
                     } 

@@ -34,6 +34,9 @@ namespace Ndexer {
             dgFilters.DataSource = bsFilters;
             dgFolders.DataSource = bsFolders;
 
+            cbTextEditor.Items.Clear();
+            cbTextEditor.Items.AddRange(Program.GetDirectorNames());
+
             Program.Scheduler.WaitFor(
                 Program.Scheduler.Start(
                     ReadPreferences(), 

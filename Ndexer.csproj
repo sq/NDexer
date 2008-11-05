@@ -31,6 +31,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="EnvDTE, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -66,7 +67,6 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="TextEditors\Director.cs" />
-    <Compile Include="TextEditors\Notepad.cs" />
     <Compile Include="TextEditors\SciTE.cs" />
     <Compile Include="SearchDialog.cs">
       <SubType>Form</SubType>
@@ -110,6 +110,8 @@
     <Compile Include="TagDatabase.cs" />
     <Compile Include="TagGenerator.cs" />
     <Compile Include="TagReader.cs" />
+    <Compile Include="TextEditors\TextPad.cs" />
+    <Compile Include="TextEditors\VisualStudio.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="icons\database_monitoring.png" />

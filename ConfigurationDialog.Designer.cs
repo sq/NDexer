@@ -199,8 +199,6 @@
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.cbTextEditor.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbTextEditor.FormattingEnabled = true;
-            this.cbTextEditor.Items.AddRange(new object[] {
-            "SciTE"});
             this.cbTextEditor.Location = new System.Drawing.Point(6, 19);
             this.cbTextEditor.Name = "cbTextEditor";
             this.cbTextEditor.Size = new System.Drawing.Size(376, 21);

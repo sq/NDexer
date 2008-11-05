@@ -7,6 +7,17 @@ using System.Runtime.InteropServices;
 using Squared.Task;
 
 namespace Ndexer {
+    public interface IBasicDirector : IDisposable {
+        void OpenFile (string filename);
+        void OpenFile (string filename, long initialLineNumber);
+        void BringToFront ();
+    }
+
+    public interface IAdvancedDirector {
+        void JumpToLine (long lineNumber);
+        void FindText (string text);
+    }
+
     public abstract class Director : NativeWindow, IDisposable {
         private const int WM_COPYDATA = 0x4A;
         private const int WS_EX_NOACTIVATE = 0x08000000;
@@ -27,14 +38,17 @@ namespace Ndexer {
 
         protected IntPtr _DirectorWindow = IntPtr.Zero;
         protected IntPtr _EditorWindow = IntPtr.Zero;
+        protected string _ApplicationPath = null;
 
         private Future _CopyDataWaiter = null;
 
         protected abstract IntPtr FindDirectorWindow ();
         protected abstract IntPtr FindEditorWindow ();
 
-        protected Director ()
+        protected Director (string applicationPath)
             : base() {
+            _ApplicationPath = applicationPath;
+
             _DirectorWindow = FindDirectorWindow();
             _EditorWindow = FindEditorWindow();
 

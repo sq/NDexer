@@ -5,6 +5,7 @@ using System.Text;
 using Squared.Task;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace Ndexer {
     public class SciTENotRunningException : Exception {
@@ -13,9 +14,12 @@ namespace Ndexer {
         }
     }
 
-    public class SciTEDirector : Director {
-        public SciTEDirector ()
-            : base () {
+    public class SciTEDirector : Director, IBasicDirector, IAdvancedDirector {
+        public SciTEDirector (string applicationPath)
+            : base (applicationPath) {
+            if (_DirectorWindow == IntPtr.Zero || _EditorWindow == IntPtr.Zero)
+                Launch();
+
             if (_DirectorWindow == IntPtr.Zero || _EditorWindow == IntPtr.Zero)
                 throw new SciTENotRunningException();
         }
@@ -26,6 +30,15 @@ namespace Ndexer {
 
         protected override IntPtr FindEditorWindow () {
             return FindWindow("SciTEWindow", null);
+        }
+
+        public void Launch () {
+            var info = new ProcessStartInfo(_ApplicationPath, "");
+            var process = Process.Start(info);
+            process.WaitForInputIdle();
+            _DirectorWindow = FindDirectorWindow();
+            _EditorWindow = FindEditorWindow();
+            process.Dispose();
         }
 
         public Future SendCommand (string command, params object[] parameters) {
