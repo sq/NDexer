@@ -19,12 +19,14 @@ namespace Ndexer {
             set {
                 if (base.VirtualListSize > value) {
                     int index = 0;
-                    if (SelectedIndices.Count > 0) {
+                    if (SelectedIndices.Count > 0)
                         index = SelectedIndices[0];
-                    }
                     if (index >= value)
                         index = value - 1;
-                    EnsureVisible(index);
+                    if (index < 0)
+                        index = 0;
+                    if (Items.Count > index)
+                        EnsureVisible(index);
                 }
 
                 base.VirtualListSize = value;
