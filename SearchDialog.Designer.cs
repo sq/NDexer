@@ -33,6 +33,7 @@
             this.tpFindFiles = new System.Windows.Forms.TabPage();
             this.tpTagsInFile = new System.Windows.Forms.TabPage();
             this.lvResults = new Ndexer.SearchResultListView();
+            this.tpTagsInContext = new System.Windows.Forms.TabPage();
             this.sbStatus.SuspendLayout();
             this.tcFilter.SuspendLayout();
             this.SuspendLayout();
@@ -84,6 +85,7 @@
             this.tcFilter.Controls.Add(this.tpFindTags);
             this.tcFilter.Controls.Add(this.tpFindFiles);
             this.tcFilter.Controls.Add(this.tpTagsInFile);
+            this.tcFilter.Controls.Add(this.tpTagsInContext);
             this.tcFilter.Location = new System.Drawing.Point(2, 2);
             this.tcFilter.Name = "tcFilter";
             this.tcFilter.SelectedIndex = 0;
@@ -146,6 +148,16 @@
             this.lvResults.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.lvResults_RetrieveVirtualItem);
             this.lvResults.DrawSubItem += new System.Windows.Forms.DrawListViewSubItemEventHandler(this.lvResults_DrawSubItem);
             // 
+            // tpTagsInContext
+            // 
+            this.tpTagsInContext.Location = new System.Drawing.Point(4, 22);
+            this.tpTagsInContext.Name = "tpTagsInContext";
+            this.tpTagsInContext.Padding = new System.Windows.Forms.Padding(3);
+            this.tpTagsInContext.Size = new System.Drawing.Size(333, 18);
+            this.tpTagsInContext.TabIndex = 3;
+            this.tpTagsInContext.Text = "Tags in Context";
+            this.tpTagsInContext.UseVisualStyleBackColor = true;
+            // 
             // SearchDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
@@ -181,6 +193,7 @@
         private System.Windows.Forms.TabPage tpFindTags;
         private System.Windows.Forms.TabPage tpFindFiles;
         private System.Windows.Forms.TabPage tpTagsInFile;
+        private System.Windows.Forms.TabPage tpTagsInContext;
     }
 }
 

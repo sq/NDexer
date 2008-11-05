@@ -16,7 +16,8 @@ namespace Ndexer {
             None = -1,
             FindTags = 0,
             FindFiles = 1,
-            TagsInFile = 2
+            TagsInFile = 2,
+            TagsInContext = 3
         }
 
         class ColumnInfo {
@@ -38,7 +39,7 @@ namespace Ndexer {
         string PendingSearchText = null;
         SearchMode PendingSearchMode = SearchMode.None;
         ListViewItem DefaultListItem = new ListViewItem(new string[3]);
-        SearchResult[] SearchResults = new SearchResult[0];
+        IList<SearchResult> SearchResults = new List<SearchResult>();
         SearchMode DisplayedSearchMode = SearchMode.None;
 
         public SearchDialog (ConnectionWrapper connection) {
@@ -57,6 +58,7 @@ namespace Ndexer {
             switch (searchMode) {
                 case SearchMode.FindTags:
                 case SearchMode.TagsInFile:
+                case SearchMode.TagsInContext:
                     return new ColumnHeader[] {
                         new ColumnHeader() { 
                             Text = "Tag Name", 
@@ -95,7 +97,7 @@ namespace Ndexer {
             return new ColumnHeader[0];
         }
 
-        private void SetSearchResults (SearchMode searchMode, SearchResult[] items) {
+        private void SetSearchResults (SearchMode searchMode, IList<SearchResult> items) {
             SearchResults = items;
 
             if (searchMode != DisplayedSearchMode) {
@@ -106,9 +108,9 @@ namespace Ndexer {
                 lvResults.Columns.AddRange(columns);
             }
             
-            lvResults.VirtualListSize = items.Length;
+            lvResults.VirtualListSize = items.Count;
 
-            if ((lvResults.SelectedIndices.Count == 0) && (items.Length > 0))
+            if ((lvResults.SelectedIndices.Count == 0) && (items.Count > 0))
                 lvResults.SelectedIndices.Add(0);
 
             lvResults_SizeChanged(null, EventArgs.Empty);
@@ -148,6 +150,14 @@ namespace Ndexer {
                         );
                         return new DbTaskIterator(query, @"*\" + searchText);
                     }
+                case SearchMode.TagsInContext: {
+                        var query = Connection.BuildQuery(
+                            @"SELECT Tags_Name, SourceFiles_Path, Tags_LineNumber " +
+                            @"FROM Tags_And_SourceFiles JOIN TagContexts USING (TagContexts_ID) WHERE " +
+                            @"TagContexts_Text = ?"
+                        );
+                        return new DbTaskIterator(query, searchText);
+                    }
             }
 
             throw new InvalidOperationException();
@@ -162,7 +172,7 @@ namespace Ndexer {
             var buffer = new List<SearchResult>();
             var item = new SearchResult();
 
-            SetSearchResults(searchMode, buffer.ToArray());
+            SetSearchResults(searchMode, buffer);
 
             if (searchText.Length > 0) {
                 using (var iterator = BuildQuery(searchMode, searchText)) {
@@ -178,6 +188,7 @@ namespace Ndexer {
                                 break;
                             case SearchMode.FindTags:
                             case SearchMode.TagsInFile:
+                            case SearchMode.TagsInContext:
                                 item.Name = iterator.Current.GetString(0);
                                 item.Filename = iterator.Current.GetString(1);
                                 item.LineNumber = iterator.Current.GetInt64(2);
@@ -188,7 +199,7 @@ namespace Ndexer {
 
                         if ((buffer.Count % 50 == 0) || ((buffer.Count < 20) && (buffer.Count % 5 == 1))) {
                             lblStatus.Text = String.Format("{0} result(s) found so far...", buffer.Count);
-                            SetSearchResults(searchMode, buffer.ToArray());
+                            SetSearchResults(searchMode, buffer);
                         }
 
                         yield return iterator.MoveNext();
@@ -199,7 +210,7 @@ namespace Ndexer {
             if (PendingSearchText != null) {
                 yield return BeginSearch();
             } else {
-                SetSearchResults(searchMode, buffer.ToArray());
+                SetSearchResults(searchMode, buffer);
                 lblStatus.Text = String.Format("{0} result(s) found.", buffer.Count);
                 pbProgress.Style = ProgressBarStyle.Continuous;
             }
@@ -256,6 +267,7 @@ namespace Ndexer {
                             break;
                         case SearchMode.FindTags:
                         case SearchMode.TagsInFile:
+                        case SearchMode.TagsInContext:
                             director.OpenFile(item.Filename, item.LineNumber);
                             director.FindText(item.Name);
                             director.BringToFront();
@@ -291,7 +303,7 @@ namespace Ndexer {
         }
 
         private void lvResults_RetrieveVirtualItem (object sender, RetrieveVirtualItemEventArgs e) {
-            if ((e.ItemIndex < 0) || (e.ItemIndex >= SearchResults.Length))
+            if ((e.ItemIndex < 0) || (e.ItemIndex >= SearchResults.Count))
                 e.Item = DefaultListItem;
             else {
                 SearchResult item = SearchResults[e.ItemIndex];
@@ -336,6 +348,15 @@ namespace Ndexer {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
                 lvResults_DoubleClick(null, EventArgs.Empty);
+            } else if (e.KeyCode == Keys.Tab && e.Control == true) {
+                int newIndex = tcFilter.SelectedIndex + (e.Shift ? -1 : 1);
+                if (newIndex >= tcFilter.TabCount)
+                    newIndex = 0;
+                else if (newIndex < 0)
+                    newIndex = tcFilter.TabCount - 1;
+
+                tcFilter.SelectedIndex = newIndex;
+                txtFilter.Focus();
             }
         }
 
