@@ -223,7 +223,7 @@ namespace Ndexer {
             PendingSearchMode = SearchMode.None;
             ActiveSearch = Program.Scheduler.Start(
                 PerformSearch(ActiveSearchMode, ActiveSearchText),
-                TaskExecutionPolicy.RunWhileFutureLives
+                TaskExecutionPolicy.RunAsBackgroundTask
             );
             yield break;
         }
