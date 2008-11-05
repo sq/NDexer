@@ -38,27 +38,25 @@ namespace Ndexer {
     }
 
     public class TagGroup : List<Tag> {
-        public int Index;
         public string Filename;
         public long Timestamp;
 
-        public TagGroup (int index, string filename, long timestamp)
+        public TagGroup (string filename, long timestamp)
             : base() {
-            Index = index;
             Filename = filename;
             Timestamp = timestamp;
         }
 
-        public IEnumerator<object> Commit (TagDatabase db) {
-            var transaction = db.Connection.CreateTransaction();
+        public IEnumerator<object> Commit () {
+            var transaction = Program.Database.Connection.CreateTransaction();
             yield return transaction;
 
-            yield return db.DeleteTagsForFile(Filename);
+            yield return Program.Database.DeleteTagsForFile(Filename);
 
-            yield return db.MakeSourceFileID(Filename, Timestamp);
+            yield return Program.Database.MakeSourceFileID(Filename, Timestamp);
 
             foreach (var tag in this)
-                yield return db.AddTag(tag);
+                yield return Program.Database.AddTag(tag);
 
             yield return transaction.Commit();
         }
@@ -70,6 +68,7 @@ namespace Ndexer {
 
     public static class Program {
         public static TaskScheduler Scheduler;
+        public static TagDatabase Database;
         public static List<ActiveWorker> ActiveWorkers = new List<ActiveWorker>();
         public static NotifyIcon NotifyIcon;
         public static Icon Icon_Monitoring;
@@ -78,8 +77,6 @@ namespace Ndexer {
         public static string TrayCaption;
         public static string DatabasePath;
         public static Dictionary<string, TagGroup> TagGroups = new Dictionary<string, TagGroup>();
-        public static int TotalFilesIndexed = 0;
-        public static int TotalFilesCommitted = 0;
 
         private const int BatchSize = 256;
 
@@ -107,7 +104,8 @@ namespace Ndexer {
 
             Scheduler = new TaskScheduler(JobQueue.WindowsMessageBased);
 
-            var db = new TagDatabase(Scheduler, DatabasePath);
+            Database = new TagDatabase(Scheduler, DatabasePath);
+
             Icon_Monitoring = Icon.FromHandle(Properties.Resources.database_monitoring.GetHicon());
             Icon_Working_1 = Icon.FromHandle(Properties.Resources.database_working_1.GetHicon());
             Icon_Working_2 = Icon.FromHandle(Properties.Resources.database_working_2.GetHicon());
@@ -116,35 +114,35 @@ namespace Ndexer {
             ContextMenu.Items.Add(
                 "&Search", null,
                 (e, s) => {
-                    Scheduler.Start(ShowSearchTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
+                    Scheduler.Start(ShowSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
                 }
             );
             ContextMenu.Items.Add(
                 "&Configure", null,
                 (e, s) => {
-                    using (var dialog = new ConfigurationDialog(db))
+                    using (var dialog = new ConfigurationDialog(Database))
                         if (dialog.ShowDialog() == DialogResult.OK)
-                            Scheduler.Start(RestartTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
+                            Scheduler.Start(RestartTask(), TaskExecutionPolicy.RunAsBackgroundTask);
                 }
             );
             ContextMenu.Items.Add(
                 "&Rebuild Index", null,
                 (e, s) => {
-                    Scheduler.Start(ConfirmRebuildIndexTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
+                    Scheduler.Start(ConfirmRebuildIndexTask(), TaskExecutionPolicy.RunAsBackgroundTask);
                 }
             );
             ContextMenu.Items.Add("-");
             ContextMenu.Items.Add(
                 "E&xit", null,
                 (e, s) => {
-                    Scheduler.Start(ExitTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
+                    Scheduler.Start(ExitTask(), TaskExecutionPolicy.RunAsBackgroundTask);
                 }
             );
 
             NotifyIcon = new NotifyIcon();
             NotifyIcon.ContextMenuStrip = ContextMenu;
             NotifyIcon.DoubleClick += (EventHandler)((s, e) => {
-                Scheduler.Start(ShowSearchTask(db), TaskExecutionPolicy.RunAsBackgroundTask);
+                Scheduler.Start(ShowSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
             });
 
             Scheduler.Start(
@@ -153,7 +151,7 @@ namespace Ndexer {
             );
 
             Scheduler.Start(
-                MainTask(db, argv),
+                MainTask(argv),
                 TaskExecutionPolicy.RunAsBackgroundTask
             );
 
@@ -174,52 +172,52 @@ namespace Ndexer {
             return GetExecutablePath() + @"\data\";
         }
 
-        public static IEnumerator<object> ConfirmRebuildIndexTask (TagDatabase db) {
+        public static IEnumerator<object> ConfirmRebuildIndexTask () {
             if (MessageBox.Show(
                         "Are you sure you want to rebuild the index? This will take a while!", "Rebuild Index",
                         MessageBoxButtons.YesNo, MessageBoxIcon.Question
                     ) == DialogResult.Yes) {
-                var trans = db.Connection.CreateTransaction();
+                var trans = Database.Connection.CreateTransaction();
                 yield return trans;
-                yield return db.Connection.ExecuteSQL("DELETE FROM Tags; DELETE FROM SourceFiles; DELETE FROM TagContexts; DELETE FROM TagKinds; DELETE FROM TagLanguages");
+                yield return Database.Connection.ExecuteSQL("DELETE FROM Tags; DELETE FROM SourceFiles; DELETE FROM TagContexts; DELETE FROM TagKinds; DELETE FROM TagLanguages");
                 yield return trans.Commit();
-                yield return RestartTask(db);
+                yield return RestartTask();
             }
         }
 
-        public static void ShowConfiguration (TagDatabase db) {
-            var dlg = new ConfigurationDialog(db);
+        public static void ShowConfiguration () {
+            var dlg = new ConfigurationDialog(Database);
             dlg.ShowDialog();
             dlg.Dispose();
         }
 
-        public static IEnumerator<object> ShowSearchTask (TagDatabase db) {
-            var rtc = new RunToCompletion(db.OpenReadConnection());
+        public static IEnumerator<object> ShowSearchTask () {
+            var rtc = new RunToCompletion(Database.OpenReadConnection());
             yield return rtc;
             var conn = (ConnectionWrapper)rtc.Result;
             var dialog = new SearchDialog(conn);
             dialog.Show();
         }
 
-        private static IEnumerator<object> TeardownTask (TagDatabase db) {
-            yield return db.Dispose();
+        private static IEnumerator<object> TeardownTask () {
+            yield return Database.Dispose();
 
             NotifyIcon.Visible = false;
         }
 
-        public static IEnumerator<object> RestartTask (TagDatabase db) {
-            yield return TeardownTask(db);
+        public static IEnumerator<object> RestartTask () {
+            yield return TeardownTask();
 
             Application.Restart();
         }
 
-        public static IEnumerator<object> ExitTask (TagDatabase db) {
-            yield return TeardownTask(db);
+        public static IEnumerator<object> ExitTask () {
+            yield return TeardownTask();
 
             Application.Exit();
         }
 
-        public static IEnumerator<object> AutoShowConfiguration (TagDatabase db, string[] argv) {
+        public static IEnumerator<object> AutoShowConfiguration (string[] argv) {
             bool show = false;
             Future f;
 
@@ -227,7 +225,7 @@ namespace Ndexer {
                 show = true;
             } else {
                 {
-                    var iter = new TaskIterator<TagDatabase.Folder>(db.GetFolders());
+                    var iter = new TaskIterator<TagDatabase.Folder>(Database.GetFolders());
                     yield return iter.Start();
                     f = iter.ToArray();
                 }
@@ -238,7 +236,7 @@ namespace Ndexer {
                     show = true;
                 } else {
                     {
-                        var iter = new TaskIterator<TagDatabase.Filter>(db.GetFilters());
+                        var iter = new TaskIterator<TagDatabase.Filter>(Database.GetFilters());
                         yield return iter.Start();
                         f = iter.ToArray();
                     }
@@ -251,41 +249,41 @@ namespace Ndexer {
             }
 
             if (show)
-                ShowConfiguration(db);
+                ShowConfiguration();
         }
 
-        public static IEnumerator<object> MainTask (TagDatabase db, string[] argv) {
-            yield return db.Initialize();
+        public static IEnumerator<object> MainTask (string[] argv) {
+            yield return Database.Initialize();
 
-            yield return AutoShowConfiguration(db, argv);
+            yield return AutoShowConfiguration(argv);
 
             using (new ActiveWorker("Compacting index")) {
-                yield return db.Compact();
+                yield return Database.Compact();
             }
 
             var sourceFiles = new BlockingQueue<string>();
 
             if (argv.Contains("--noscan"))
                 Scheduler.Start(
-                    MonitorForChanges(db, sourceFiles),
+                    MonitorForChanges(sourceFiles),
                     TaskExecutionPolicy.RunAsBackgroundTask
                 );
             else
                 Scheduler.Start(
-                    ScanThenMonitor(db, sourceFiles),
+                    ScanThenMonitor(sourceFiles),
                     TaskExecutionPolicy.RunAsBackgroundTask
                 );
 
             Scheduler.Start(
-                UpdateIndex(db, sourceFiles),
+                UpdateIndex(sourceFiles),
                 TaskExecutionPolicy.RunAsBackgroundTask
             );
         }
 
-        public static IEnumerator<object> ScanThenMonitor (TagDatabase db, BlockingQueue<string> sourceFiles) {
-            yield return ScanFiles(db, sourceFiles);
+        public static IEnumerator<object> ScanThenMonitor (BlockingQueue<string> sourceFiles) {
+            yield return ScanFiles(sourceFiles);
 
-            yield return MonitorForChanges(db, sourceFiles);
+            yield return MonitorForChanges(sourceFiles);
         }
 
         public static IEnumerator<object> RefreshTrayIcon () {
@@ -322,14 +320,14 @@ namespace Ndexer {
             }
         }
 
-        public static IEnumerator<object> ScanFiles (TagDatabase db, BlockingQueue<string> sourceFiles) {
+        public static IEnumerator<object> ScanFiles (BlockingQueue<string> sourceFiles) {
             using (new ActiveWorker("Scanning folders for changes")) {
                 var changeSet = new TaskIterator<TagDatabase.Change>(
-                    db.UpdateFileListAndGetChangeSet()
+                    Database.UpdateFileListAndGetChangeSet()
                 );
                 yield return changeSet.Start();
 
-                Transaction transaction = db.Connection.CreateTransaction();
+                Transaction transaction = Database.Connection.CreateTransaction();
                 yield return transaction;
                 int numChanges = 0;
                 int numDeletes = 0;
@@ -337,10 +335,10 @@ namespace Ndexer {
                 while (!changeSet.Disposed) {
                     var change = changeSet.Current;
                     if (change.Deleted) {
-                        yield return db.DeleteSourceFile(change.Filename);
+                        yield return Database.DeleteSourceFile(change.Filename);
                         numDeletes += 1;
                     } else {
-                        yield return db.GetSourceFileID(change.Filename);
+                        yield return Database.GetSourceFileID(change.Filename);
                         sourceFiles.Enqueue(change.Filename);
                         numChanges += 1;
                     }
@@ -354,12 +352,14 @@ namespace Ndexer {
             }
         }
 
-        private static void OnNextFileHandler (TagDatabase db, string filename, long lastWriteTime) {
-            int id = Interlocked.Increment(ref TotalFilesIndexed);
-            TagGroups.Add(filename, new TagGroup(id, filename, lastWriteTime));
+        private static void OnNextFileHandler (string filename, long lastWriteTime) {
+            TagGroups.Add(filename, new TagGroup(filename, lastWriteTime));
         }
 
-        public static IEnumerator<object> UpdateIndex (TagDatabase db, BlockingQueue<string> sourceFiles) {
+        public static IEnumerator<object> UpdateIndex (BlockingQueue<string> sourceFiles) {
+            string lastSourceFile = null;
+            TagGroup[] currentTagGroup = new TagGroup[] { null };
+
             var gen = new TagGenerator(
                 GetCTagsPath(),
                 "--filter=yes --filter-terminator=[[<>]]\n --fields=+afmikKlnsStz --sort=no"
@@ -368,7 +368,7 @@ namespace Ndexer {
             var onNextFile = (Func<string, object>)(
                 (fn) => {
                     var lastWriteTime = System.IO.File.GetLastWriteTime(fn).ToFileTime();
-                    OnNextFileHandler(db, fn, lastWriteTime);
+                    OnNextFileHandler(fn, lastWriteTime);
                     return null;
                 }
             );
@@ -389,17 +389,15 @@ namespace Ndexer {
                 return (outputTags.Count <= 0) && (inputLines.Count <= 0) && (sourceFiles.Count <= 0);
             };
 
-            Func<int> getFlushThreshold = () => {
-                return TotalFilesCommitted;
+            Func<TagGroup, bool> shouldCommit = (tg) => {
+                return (tg != currentTagGroup[0]);
             };
 
             Scheduler.Start(
-                FlushPendingTagGroups(db, shouldFlush, getFlushThreshold),
+                FlushPendingTagGroups(shouldFlush, shouldCommit),
                 TaskExecutionPolicy.RunAsBackgroundTask
             );
 
-            string lastSourceFile = null;
-            TagGroup tagGroup = null;
             while (true) {
                 var f = outputTags.Dequeue();
                 yield return f;
@@ -407,38 +405,34 @@ namespace Ndexer {
                 using (new ActiveWorker("Updating index")) {
                     var tag = (Tag)f.Result;
                     if (tag.SourceFile != lastSourceFile) {
-                        if (tagGroup != null) {
-                            Interlocked.Increment(ref TotalFilesCommitted);
-                            TagGroups.Remove(tagGroup.Filename);
-                            yield return tagGroup.Commit(db);
+                        if (currentTagGroup[0] != null) {
+                            TagGroups.Remove(currentTagGroup[0].Filename);
+                            yield return currentTagGroup[0].Commit();
                         }
 
-                        tagGroup = TagGroups[tag.SourceFile];
+                        currentTagGroup[0] = TagGroups[tag.SourceFile];
                         lastSourceFile = tag.SourceFile;
                     }
 
-                    tagGroup.Add(tag);
+                    currentTagGroup[0].Add(tag);
                 }
 
                 if ((outputTags.Count <= 0) && (inputLines.Count <= 0) && (sourceFiles.Count <= 0)) {
-                    if (tagGroup != null)
-                        yield return tagGroup.Commit(db);
+                    if (currentTagGroup[0] != null)
+                        yield return currentTagGroup[0].Commit();
                 }
             }
         }
 
-        public static IEnumerator<object> FlushPendingTagGroups (TagDatabase db, Func<bool> shouldFlush, Func<int> getFlushThreshold) {
+        public static IEnumerator<object> FlushPendingTagGroups (Func<bool> shouldFlush, Func<TagGroup, bool> shouldCommit) {
             while (true) {
                 if (shouldFlush()) {
-                    int maxIndex = getFlushThreshold();
-
                     foreach (string key in TagGroups.Keys.ToArray()) {
                         TagGroup item = null;
                         if (TagGroups.TryGetValue(key, out item)) {
-                            if (item.Index < maxIndex) {
-                                Interlocked.Increment(ref TotalFilesCommitted);
+                            if (shouldCommit(item)) {
                                 TagGroups.Remove(key);
-                                yield return item.Commit(db);
+                                yield return item.Commit();
                             }
                         }
                     }
@@ -449,11 +443,11 @@ namespace Ndexer {
             }
         }
 
-        public static IEnumerator<object> DeleteSourceFiles (TagDatabase db, string[] filenames) {
-            using (var transaction = db.Connection.CreateTransaction()) {
+        public static IEnumerator<object> DeleteSourceFiles (string[] filenames) {
+            using (var transaction = Database.Connection.CreateTransaction()) {
                 yield return transaction;
                 foreach (string filename in filenames) {
-                    yield return db.DeleteSourceFileOrFolder(filename);
+                    yield return Database.DeleteSourceFileOrFolder(filename);
                 }
                 yield return transaction.Commit();
             }
@@ -471,17 +465,17 @@ namespace Ndexer {
             }
         }
 
-        public static IEnumerator<object> MonitorForChanges (TagDatabase db, BlockingQueue<string> sourceFiles) {
+        public static IEnumerator<object> MonitorForChanges (BlockingQueue<string> sourceFiles) {
             Scheduler.Start(
                 PeriodicGC(),
                 TaskExecutionPolicy.RunAsBackgroundTask
             );
 
-            var rtc = new RunToCompletion(db.GetFilterPatterns());
+            var rtc = new RunToCompletion(Database.GetFilterPatterns());
             yield return rtc;
             var filters = (string[])rtc.Result;
 
-            rtc = new RunToCompletion(db.GetFolderPaths());
+            rtc = new RunToCompletion(Database.GetFolderPaths());
             yield return rtc;
             var folders = (string[])rtc.Result;
 
@@ -510,7 +504,7 @@ namespace Ndexer {
                     using (new ActiveWorker(String.Format("Pruning {0} item(s) from index", deletedFiles.Count))) {
                         string[] filenames = deletedFiles.ToArray();
                         deletedFiles.Clear();
-                        yield return DeleteSourceFiles(db, filenames);
+                        yield return DeleteSourceFiles(filenames);
                     }
                 }
 
