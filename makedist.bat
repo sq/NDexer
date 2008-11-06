@@ -1,6 +1,6 @@
 @echo off
 SET NDEXER_ROOT=%~dp0
-SET NDEXER_REVSTR=$Rev: 54 $
+SET NDEXER_REVSTR=$Rev$
 SET NDEXER_REVID=%NDEXER_REVSTR:~6,-2%
 
 echo __________________________________________________
