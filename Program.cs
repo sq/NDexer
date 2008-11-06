@@ -193,6 +193,22 @@ namespace Ndexer {
             dlg.Dispose();
         }
 
+        public static string[] GetLanguageNames () {
+            var buffer = new List<string>();
+
+            var info = new ProcessStartInfo(GetCTagsPath(), "--list-languages");
+            info.RedirectStandardOutput = true;
+            info.UseShellExecute = false;
+
+            using (var process = Process.Start(info)) {
+                process.WaitForExit();
+                while (!process.StandardOutput.EndOfStream)
+                    buffer.Add(process.StandardOutput.ReadLine());
+            }
+
+            return buffer.ToArray();
+        }
+
         public static string[] GetDirectorNames () {
             var results = new List<string>();
             var types = Assembly.GetExecutingAssembly().GetTypes();

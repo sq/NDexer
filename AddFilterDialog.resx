@@ -117,36 +117,27 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <metadata name="ilFileTypes.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>201, 17</value>
-  </metadata>
-  <metadata name="ilFolders.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>109, 17</value>
-  </metadata>
-  <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>53</value>
-  </metadata>
   <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         AAABAAEAEBAAAAAAIABoBAAAFgAAACgAAAAQAAAAIAAAAAEAIAAAAAAAQAQAAAAAAAAAAAAAAAAAAAAA
-        AAAAAAABAAAAAQAAAAEAAAABET1V9yhfh/tJiLz9RoOp70tXYslSUlJjAAAAAQAAAAEAAAABAAAAAQAA
-        AAEAAAABAAAAAQAAAAEAAAABb29vKStlg/uUx/n/kcn5/0GFyf8jaKr/UmFt71paWgNcXFwPTk5OKQAA
-        AAEAAAABAAAAAQAAAAEAAAABgYGBm29vb/1Diar/4PL//1Sa2P8aer7/SZjF/zh/uP1CeatBWFhY505O
-        Tv1JSUmbAAAAAQAAAAEAAAABpKSke7y8vP/e3t7/cY6i/3q21f+Qt9H/Vcnk/1vf9f940O3/RZHR/5ej
-        rf/S0tL/gICA/1JSUnsAAAABAAAAAaurq32mpqb/1dXV/8XFxf+RtMT/dbnW/8L2/f9j3/f/XeL4/3nT
-        8P9Hltr/ucPN/25ubv9nZ2d9AAAAAQAAAAEAAAABrKyshcXFxf/BwcH/xcXF/4ywwv93y+f/x/f9/17c
-        9f9a4ff/e9Tx/0eW2f9YdY6fAAAAAQAAAAGjo6PNj4+P46CgoO/Pz8//xsbG/8zMzP+enp7HUabBe3nT
-        7v/H9/3/X9z1/1vi9/961vL/Q5XV/VRjcOlTU1PNv7+//eLi4v/S0tL/xsbG/83Nzf+xsbH/k5OTRQAA
-        AAEkt+RJfNTu/8T2/f9s3fb/bcrt/2Oj1/9mn9L/X2hx/cTExP3p6en/1tbW/8nJyf/Ozs7/paWl/4SE
-        hEUAAAABAAAAAUusyYN/1Oz/suP5/4vA5/+u0/b/xOD8/2ad0P/IyMjNxMTE48DAwO/Y2Nj/zc3N/7y8
-        vP+CgoLHd3d3RX5+fkWPj4/Hir/O/3e+5/+00vD/5fP//6zS7/9Mi8L7AAAAAQAAAAHFxcWF1NTU/8zM
-        zP/Jycn/urq6/5ycnP+hoaH/wsLC/8bGxv+Su8r/WKXY/4Wx2/9GndD/K5XRXwAAAAHKysp9xMTE/9zc
-        3P/U1NT/2dnZ/9vb2//W1tb/1NTU/9nZ2f/S0tL/y8vL/8jIyP95eXn/cXFxfQAAAAEAAAAB0NDQe9zc
-        3P/t7e3/29vb/8LCwvW+vr7/1tbW/9TU1P+wsLD/rKys9cvLy//n5+f/t7e3/4uLi3sAAAABAAAAAQAA
-        AAHR0dGbzs7O/crKyufGxsYZwsLC597e3v/d3d3/srKy57GxsRmsrKznp6en/aOjo5sAAAABAAAAAQAA
-        AAEAAAABAAAAAdHR0SnOzs4Py8vLA8fHx+vl5eX/5OTk/6ysrOu2trYDsrKyD62trSkAAAABAAAAAQAA
-        AAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAHLy8tjx8fHv8TExL+/v79jAAAAAQAAAAEAAAABAAAAAQAA
+        AAAAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAA
+        AAEAAAABAAAAAQAAAAEAAAABAAAAAUGSTiM9j0l9OoxE2zaJQPMyhzzzL4Q32yyBM30ofzAjAAAAAQAA
+        AAEAAAABAAAAAQAAAAEAAAABAAAAAUmZWFNFllPnQZlQ/33Cj/+W0Kb/ls+m/3i+if82jUL/LIE05yl/
+        MFMAAAABAAAAAQAAAAEAAAABAAAAAVGfYVNNnF31ZLR4/6jbtf+HzJj/Zrx9/2S6fP+Gy5j/pdm0/1iq
+        a/8sgTT1KX8wUwAAAAEAAAABAAAAAVmmayNWo2blarl9/6jbsv9gvHf/XLpz/1m4cP9ZtW//WLVv/1u3
+        dP+l2bP/Wqps/yyCNOUpfzAjAAAAAQAAAAFdqXB/U6to/6rdtP9kwXn/X75x/2C8d////////////1m4
+        cP9YtW7/XLd0/6batP84j0P/LII0fwAAAAEAAAABYax124rMmP+J05b/a8Z6/2PBcP9Vq2X/////////
+        //9ZuHD/Wbhw/1u5cv+FzJf/e76N/zCFOdsAAAABAAAAAWWvevep3bP/fc+K/3XMgf//////////////
+        //////////////////9ZuHD/Z759/5zUq/80iD33AAAAAQAAAAFpsn73tuK+/4vVl/96yYb/////////
+        ////////////////////////Wbhw/2nBfv+d1Kr/OItC9wAAAAEAAAABbbWD26zdtv+m36//gcuM/3zJ
+        hv9uvXn///////////9brGr/YLx3/1y6c/+L0Zn/gMWS/zyOR9sAAAABAAAAAXC4h3+Fx5f/0u7X/5XZ
+        oP+K05T/f8iJ////////////ec2F/2vDfP9vx37/rN+1/0WeV/9AkUx/AAAAAQAAAAFzuoojcLiH5ara
+        t//Y8dz/ktid/4jNk/+EzI7/i9SW/4rUlf+D0o7/r+C3/2u5ff9ImFblRJRRIwAAAAEAAAABAAAAAXO7
+        i1NwuIf1r9y7/9zy4P+25L3/m9ul/5bZoP+l36//wOjF/3nCiv9Qnl/1TJtbUwAAAAEAAAABAAAAAQAA
+        AAEAAAABc7uLU3G4h+eUzqT/w+bL/8/r1P/J6c7/r924/225f/9YpWnnVKFlUwAAAAEAAAABAAAAAQAA
+        AAEAAAABAAAAAQAAAAF0u4sjcbmIfW62hNtqs4DzZ7F882Oud9tgq3N9XKhuIwAAAAEAAAABAAAAAQAA
+        AAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAQAA
         AAEAAAABAAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA//8AAP//AAD//wAA
         //8AAP//AAD//w==
 </value>
