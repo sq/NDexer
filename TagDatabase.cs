@@ -6,6 +6,7 @@ using System.Data.SQLite;
 using Squared.Task;
 using System.Data;
 using Squared.Task.Data;
+using Squared.Util;
 
 namespace Ndexer {
     public class TagDatabase {
@@ -49,7 +50,11 @@ namespace Ndexer {
             _LastInsertID,
             _InsertTag;
 
-        private Dictionary<string, Dictionary<string, object>> _MemoizationCache = new Dictionary<string, Dictionary<string, object>>();
+        private const int MemoizationLRUSize = 128;
+        private int _MemoizationHits = 0;
+        private int _MemoizationMisses = 0;
+
+        private Dictionary<string, LRUCache<string, object>> _MemoizationCache = new Dictionary<string, LRUCache<string, object>>();
         private Dictionary<string, object> _PreferenceCache = new Dictionary<string, object>();
 
         public TaskScheduler Scheduler;
@@ -65,6 +70,26 @@ namespace Ndexer {
             Connection = new ConnectionWrapper(scheduler, NativeConnection);
 
             CompileQueries();
+
+#if DEBUG
+            scheduler.Start(
+                MemoizationHitRateLogger(), TaskExecutionPolicy.RunAsBackgroundTask
+            );
+#endif
+        }
+
+        private IEnumerator<object> MemoizationHitRateLogger () {
+            while (true) {
+                double hitRate = double.NaN;
+                int total = _MemoizationHits + _MemoizationMisses;
+                if (total > 0) {
+                    hitRate = (_MemoizationHits / (double)total) * 100;
+
+                    System.Diagnostics.Debug.WriteLine(String.Format("MemoizedGetID avg. hit rate: {0}% of {1} request(s)", Math.Round(hitRate, 2), total));
+                }
+
+                yield return new Sleep(60.0);
+            }
         }
 
         private void CompileQueries () {
@@ -239,8 +264,6 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> DeleteTagsForFile (string filename) {
-            FlushMemoizedIDs();
-
             var f = _GetSourceFileID.ExecuteScalar(filename);
             yield return f;
 
@@ -437,22 +460,21 @@ namespace Ndexer {
                 yield return new Result(0);
 
             string taskName = task.Method.Name;
-            Dictionary<string, object> resultCache = null;
+            LRUCache<string, object> resultCache = null;
             if (!_MemoizationCache.TryGetValue(taskName, out resultCache)) {
-                resultCache = new Dictionary<string, object>();
+                resultCache = new LRUCache<string, object>(MemoizationLRUSize);
                 _MemoizationCache[taskName] = resultCache;
             }
 
             object result = null;
             if (resultCache.TryGetValue(argument, out result)) {
+                _MemoizationHits += 1;
                 yield return new Result(result);
             } else {
+                _MemoizationMisses += 1;
                 var rtc = new RunToCompletion(task(argument));
                 yield return rtc;
                 result = rtc.Result;
-
-                if (resultCache.Count > 512)
-                    resultCache.Clear();
 
                 resultCache[argument] = result;
                 yield return new Result(result);
