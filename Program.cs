@@ -69,6 +69,8 @@ namespace Ndexer {
     }
 
     public static class Program {
+        public const string Revision = "$Rev $";
+
         public static TaskScheduler Scheduler;
         public static TagDatabase Database;
         public static List<ActiveWorker> ActiveWorkers = new List<ActiveWorker>();
@@ -392,7 +394,10 @@ namespace Ndexer {
         }
 
         private static void OnNextFileHandler (string filename, long lastWriteTime) {
-            TagGroups.Add(filename, new TagGroup(filename, lastWriteTime));
+            if (TagGroups.ContainsKey(filename))
+                TagGroups[filename].Timestamp = lastWriteTime;
+            else
+                TagGroups.Add(filename, new TagGroup(filename, lastWriteTime));
         }
 
         public static IEnumerator<object> UpdateIndex (BlockingQueue<string> sourceFiles) {
