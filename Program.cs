@@ -69,7 +69,7 @@ namespace Ndexer {
     }
 
     public static class Program {
-        public const string Revision = "$Rev $";
+        public const string Revision = "$Rev$";
 
         public static TaskScheduler Scheduler;
         public static TagDatabase Database;
