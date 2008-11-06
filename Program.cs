@@ -69,7 +69,8 @@ namespace Ndexer {
     }
 
     public static class Program {
-        public const string Revision = "$Rev$";
+        public const string RevisionString = "$Rev$";
+        public static int Revision;
 
         public static TaskScheduler Scheduler;
         public static TagDatabase Database;
@@ -100,6 +101,8 @@ namespace Ndexer {
                 );
                 return;
             }
+
+            Revision = int.Parse(System.Text.RegularExpressions.Regex.Match(RevisionString, @"\$Rev\: ([0-9]*)").Groups[1].Value);
 
             DatabasePath = System.IO.Path.GetFullPath(argv[0]);
 
@@ -334,19 +337,19 @@ namespace Ndexer {
                 toggle = !toggle;
 
                 Icon theIcon;
-                string statusMessage = "Idle";
+                string statusMessage = "";
                 int numWorkers = 0;
                 lock (ActiveWorkers)
                     numWorkers = ActiveWorkers.Count;
                 if (numWorkers > 0) {
                     theIcon = (toggle) ? Icon_Working_1 : Icon_Working_2;
                     lock (ActiveWorkers)
-                        statusMessage = ActiveWorkers[0].Description;
+                        statusMessage = ": " + ActiveWorkers[0].Description;
                 } else {
                     theIcon = Icon_Monitoring;
                 }
 
-                TrayCaption = String.Format("NDexer ({0}) - {1}", System.IO.Path.GetFileName(DatabasePath), statusMessage);
+                TrayCaption = String.Format("NDexer r{2} ({0}){1}", System.IO.Path.GetFileName(DatabasePath), statusMessage, Revision);
                 if (TrayCaption.Length >= 64)
                     TrayCaption = TrayCaption.Substring(0, 60) + "...";
 
