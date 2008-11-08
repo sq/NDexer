@@ -77,6 +77,7 @@ namespace Ndexer {
             info.RedirectStandardInput = true;
             info.CreateNoWindow = true;
             info.WindowStyle = ProcessWindowStyle.Hidden;
+            info.ErrorDialog = false;
 
             var _process = Process.Start(info);
             using (var process = new ChildProcess(_process))

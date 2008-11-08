@@ -20,6 +20,8 @@ namespace Ndexer {
         List<string> Folders = new List<string>();
         Dictionary<string, List<string>> FileTypes = new Dictionary<string, List<string>>();
 
+        public bool NeedRestart = false;
+
         public ConfigurationDialog (TagDatabase db) 
             : base() {
             DB = db;
@@ -182,6 +184,7 @@ namespace Ndexer {
         private void cmdRemoveFolder_Click (object sender, EventArgs e) {
             Folders.RemoveAt(lvFolders.SelectedIndices[0]);
             RefreshFolderList();
+            NeedRestart = true;
         }
 
         private void cmdAddFolder_Click (object sender, EventArgs e) {
@@ -194,6 +197,7 @@ namespace Ndexer {
                         folderPath += "\\";
                     Folders.Add(folderPath);
                     RefreshFolderList();
+                    NeedRestart = true;
                 }
             }
         }
@@ -207,6 +211,7 @@ namespace Ndexer {
                     FileTypes[dlg.Language].Add(dlg.Filter);
 
                     RefreshFileTypeList();
+                    NeedRestart = true;
                 }
             }
         }
@@ -219,6 +224,7 @@ namespace Ndexer {
                 FileTypes.Remove(item.Group.Name);
 
             RefreshFileTypeList();
+            NeedRestart = true;
         }
 
         private void lvFileTypes_SelectedIndexChanged (object sender, EventArgs e) {

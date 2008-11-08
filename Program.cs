@@ -128,7 +128,7 @@ namespace Ndexer {
                 "&Configure", null,
                 (e, s) => {
                     using (var dialog = new ConfigurationDialog(Database))
-                        if (dialog.ShowDialog() == DialogResult.OK)
+                        if ((dialog.ShowDialog() == DialogResult.OK) && (dialog.NeedRestart))
                             Scheduler.Start(RestartTask(), TaskExecutionPolicy.RunAsBackgroundTask);
                 }
             );
@@ -192,16 +192,13 @@ namespace Ndexer {
             }
         }
 
-        public static void ShowConfiguration () {
-            var dlg = new ConfigurationDialog(Database);
-            dlg.ShowDialog();
-            dlg.Dispose();
-        }
-
         public static string[] GetLanguageNames () {
             var buffer = new List<string>();
 
             var info = new ProcessStartInfo(GetCTagsPath(), "--list-languages");
+            info.CreateNoWindow = true;
+            info.WindowStyle = ProcessWindowStyle.Hidden;
+            info.ErrorDialog = false;
             info.RedirectStandardOutput = true;
             info.UseShellExecute = false;
 
@@ -292,8 +289,11 @@ namespace Ndexer {
                 }
             }
 
-            if (show)
-                ShowConfiguration();
+            if (show) {
+                using (var dialog = new ConfigurationDialog(Database))
+                    if (dialog.ShowDialog() != DialogResult.OK)
+                        yield return ExitTask();
+            }
         }
 
         public static IEnumerator<object> MainTask (string[] argv) {
