@@ -112,6 +112,14 @@ static void makePHPTag (const vString* const name, const int kind, const vString
 
 static void findPhpTags (void)
 {
+	static const char * qualifiers[] = {
+		"private",
+		"public",
+		"protected",
+		"static",
+		"abstract",
+		NULL
+	};
 	vString *name = vStringNew ();
 	vString *currentFunction = vStringNew ();
 	int currentFunctionBraceCount = 0;
@@ -119,6 +127,7 @@ static void findPhpTags (void)
 	int currentClassBraceCount = 0;
 	int braceCount = 0;
 	int isConst = -1;
+	int q, qualifierLength;
 	const unsigned char *line;
 
 	while ((line = fileReadLine ()) != NULL)
@@ -126,8 +135,19 @@ static void findPhpTags (void)
 		const unsigned char *cp = line;
 		const char* f;
 
-		while (isspace (*cp))
-			cp++;
+		skip_spaces:
+			while (isspace (*cp))
+				cp++;
+
+		q = 0;
+		while (qualifiers[q] != NULL) {
+			qualifierLength = strlen(qualifiers[q]);
+			if (strncmp((const char*) cp, qualifiers[q], (size_t)qualifierLength) == 0) {
+				cp += qualifierLength;
+				goto skip_spaces;
+			}
+			q++;
+		}
 
 		isConst = -1;
 
@@ -203,11 +223,10 @@ static void findPhpTags (void)
 			currentFunctionBraceCount = braceCount;
 			vStringClear (name);
 		} 
-		else if (((f = strstr ((const char*) cp, "class")) != NULL &&
-			(f == (const char*) cp || isspace ((int) f [-1])) &&
-			isspace ((int) f [5])))
+		else if (strncmp ((const char*) cp, "class", (size_t) 5) == 0 &&
+				 isspace ((int) cp [5]))
 		{
-			cp = ((const unsigned char *) f) + 5;
+			cp += 5;
 
 			while (isspace ((int) *cp))
 				++cp;
