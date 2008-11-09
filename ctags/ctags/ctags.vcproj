@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="gnu_regex"
-				PreprocessorDefinitions="REGEX_MALLOC;HAVE_REGCOMP;WIN32;_DEBUG;_CONSOLE;STDC_HEADERS=1"
+				PreprocessorDefinitions="REGEX_MALLOC;HAVE_REGCOMP;WIN32;_DEBUG;_CONSOLE;STDC_HEADERS=1;_CRT_SECURE_NO_WARNINGS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -117,7 +117,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="gnu_regex"
-				PreprocessorDefinitions="REGEX_MALLOC;HAVE_REGCOMP;WIN32;NDEBUG;_CONSOLE;;STDC_HEADERS=1"
+				PreprocessorDefinitions="REGEX_MALLOC;HAVE_REGCOMP;WIN32;NDEBUG;_CONSOLE;;STDC_HEADERS=1;_CRT_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				DefaultCharIsUnsigned="true"
@@ -457,11 +457,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\gnu_regex\regex.h"
+				RelativePath="..\regex.h"
 				>
 			</File>
 			<File
-				RelativePath="..\regex.h"
+				RelativePath="..\gnu_regex\regex.h"
 				>
 			</File>
 			<File

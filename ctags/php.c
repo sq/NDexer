@@ -29,14 +29,15 @@
 *   DATA DEFINITIONS
 */
 typedef enum {
-	K_CLASS, K_DEFINE, K_FUNCTION, K_VARIABLE
+	K_CLASS, K_DEFINE, K_FUNCTION, K_VARIABLE, K_CONSTANT
 } phpKind;
 
 static kindOption PhpKinds [] = {
 	{ TRUE, 'c', "class",    "classes" },
-	{ TRUE, 'd', "define",   "constant definitions" },
+	{ TRUE, 'd', "define",   "defines" },
 	{ TRUE, 'f', "function", "functions" },
-	{ TRUE, 'v', "variable", "variables" }
+	{ TRUE, 'v', "variable", "variables" },
+	{ TRUE, 'k', "constant", "constants" },
 };
 
 /*
@@ -68,12 +69,25 @@ static boolean isLetter(const int c)
 
 static boolean isVarChar1(const int c)
 {
-	return (boolean)(isLetter (c)  ||  c == '_');
+	return (boolean)(isLetter (c) || c == '_');
 }
 
 static boolean isVarChar(const int c)
 {
 	return (boolean)(isVarChar1 (c) || isdigit (c));
+}
+
+static boolean isVarCharPHP5 (const char * c) {
+	char ch, next, prev;
+
+	prev = *(c - 1);
+	ch = *c;
+	if (ch)
+		next = *(c + 1);
+	else
+		next = 0;
+
+	return (boolean)(isVarChar(ch) || ((ch == '-') && (next == '>')) || ((ch == '>') && (prev == '-')));
 }
 
 static void makePHPTag (const vString* const name, const int kind, const vString* const currentClass, const vString* const currentFunction) {
@@ -104,6 +118,7 @@ static void findPhpTags (void)
 	vString *currentClass = vStringNew ();
 	int currentClassBraceCount = 0;
 	int braceCount = 0;
+	int isConst = -1;
 	const unsigned char *line;
 
 	while ((line = fileReadLine ()) != NULL)
@@ -114,11 +129,20 @@ static void findPhpTags (void)
 		while (isspace (*cp))
 			cp++;
 
-		if (*(const char*)cp == '$'  &&  isVarChar1 (*(const char*)(cp+1)))
+		isConst = -1;
+
+		if ((*(const char*)cp == '$'  &&  isVarChar1 (*(const char*)(cp+1))) ||
+			((isConst = strncmp ((const char*) cp, "const", (size_t) 5)) == 0))
 		{
-			cp += 1;
+			if (isConst == 0) {
+				cp += 5;
+				while (isspace ((int) *cp))
+					++cp;
+			} else
+				cp += 1;
+
 			vStringClear (name);
-			while (isVarChar ((int) *cp))
+			while (isVarCharPHP5(cp))
 			{
 				vStringPut (name, (int) *cp);
 				++cp;
@@ -128,7 +152,20 @@ static void findPhpTags (void)
 			if (*(const char*) cp == '=')
 			{
 				vStringTerminate (name);
-				makePHPTag (name, K_VARIABLE, currentClass, currentFunction);
+
+				if (f = strstr(vStringValue(name), "this->")) {
+					vString *old = name;
+					name = vStringNew();
+					vStringCatS(name, vStringValue(old) + 6);
+					vStringTerminate(name);
+					vStringDelete(old);
+				} 
+				
+				if (f = strstr(vStringValue(name), "->")) {
+				} else {
+					makePHPTag (name, (isConst == 0) ? K_CONSTANT : K_VARIABLE, currentClass, currentFunction);
+				}
+
 				vStringClear (name);
 			}
 		}
@@ -166,10 +203,11 @@ static void findPhpTags (void)
 			currentFunctionBraceCount = braceCount;
 			vStringClear (name);
 		} 
-		else if (strncmp ((const char*) cp, "class", (size_t) 5) == 0 &&
-				 isspace ((int) cp [5]))
+		else if (((f = strstr ((const char*) cp, "class")) != NULL &&
+			(f == (const char*) cp || isspace ((int) f [-1])) &&
+			isspace ((int) f [5])))
 		{
-			cp += 5;
+			cp = ((const unsigned char *) f) + 5;
 
 			while (isspace ((int) *cp))
 				++cp;
