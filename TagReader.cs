@@ -42,70 +42,64 @@ namespace Ndexer {
     }
 
     public static class TagReader {
-        public static IEnumerator<object> ReadTags (BlockingQueue<string> inputLines, BlockingQueue<Tag> outputTags) {
+        public static bool ReadTag (string line, out Tag tag) {
+            tag = new Tag();
             var sep = new char[] { '\t' };
             var header = "\t/^";
             var sentinel = ";\"\t";
 
-            while (true) {
-                var f = inputLines.Dequeue();
-                yield return f;
-                string line = (string)f.Result;
+            int startPos = line.LastIndexOf(sentinel);
+            int nextPos = line.IndexOf('\t');
+            int splitPos = line.IndexOf(header);
+            if (splitPos == -1)
+                splitPos = startPos;
+            if (startPos == -1)
+                return false;
 
-                int startPos = line.LastIndexOf(sentinel);
-                int nextPos = line.IndexOf('\t');
-                int splitPos = line.IndexOf(header);
-                if (splitPos == -1)
-                    splitPos = startPos;
-                if (startPos == -1)
-                    continue;
+            tag.Name = line.Substring(0, nextPos);
 
-                Tag current = new Tag();
-                current.Name = line.Substring(0, nextPos);
+            startPos += sentinel.Length;
+            int sourceFileLength = (splitPos - nextPos) - 1;
+            int extraTabPos = line.IndexOf('\t', nextPos + 1);
+            if (extraTabPos < splitPos)
+                sourceFileLength = (extraTabPos - nextPos) - 1;
 
-                startPos += sentinel.Length;
-                int sourceFileLength = (splitPos - nextPos) - 1;
-                int extraTabPos = line.IndexOf('\t', nextPos + 1);
-                if (extraTabPos < splitPos)
-                    sourceFileLength = (extraTabPos - nextPos) - 1;
+            tag.SourceFile = line.Substring(nextPos + 1, sourceFileLength);
 
-                current.SourceFile = line.Substring(nextPos + 1, sourceFileLength);
+            while (startPos > 0) {
+                nextPos = line.IndexOf('\t', startPos) + 1;
+                if (nextPos < startPos)
+                    nextPos = line.Length + 1;
 
-                while (startPos > 0) {
-                    nextPos = line.IndexOf('\t', startPos) + 1;
-                    if (nextPos < startPos)
-                        nextPos = line.Length + 1;
-
-                    splitPos = line.IndexOf(':', startPos);
-                    if (splitPos < nextPos) {
-                        string key = line.Substring(startPos, splitPos - startPos);
-                        string value = line.Substring(splitPos + 1, nextPos - splitPos - 2);
-                        switch (key) {
-                            case "kind":
-                                current.Kind = value;
-                                break;
-                            case "line":
-                                current.LineNumber = int.Parse(value);
-                                break;
-                            case "language":
-                                current.Language = value;
-                                break;
-                            case "function":
-                            case "class":
-                            case "namespace":
-                                current.Context = value;
-                                break;
-                        }
+                splitPos = line.IndexOf(':', startPos);
+                if (splitPos < nextPos) {
+                    string key = line.Substring(startPos, splitPos - startPos);
+                    string value = line.Substring(splitPos + 1, nextPos - splitPos - 2);
+                    switch (key) {
+                        case "kind":
+                            tag.Kind = value;
+                            break;
+                        case "line":
+                            tag.LineNumber = int.Parse(value);
+                            break;
+                        case "language":
+                            tag.Language = value;
+                            break;
+                        case "function":
+                        case "class":
+                        case "namespace":
+                            tag.Context = value;
+                            break;
                     }
-
-                    if (nextPos < line.Length)
-                        startPos = nextPos;
-                    else
-                        break;
                 }
 
-                outputTags.Enqueue(current);
+                if (nextPos < line.Length)
+                    startPos = nextPos;
+                else
+                    break;
             }
+
+            return true;
         }
     }
 }
