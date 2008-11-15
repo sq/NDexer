@@ -42,11 +42,13 @@ namespace Ndexer {
     public class TagGroup : List<Tag> {
         public string Filename;
         public long Timestamp;
+        public int Index;
 
-        public TagGroup (string filename, long timestamp)
+        public TagGroup (string filename, long timestamp, int index)
             : base() {
             Filename = filename;
             Timestamp = timestamp;
+            Index = index;
         }
 
         public IEnumerator<object> Commit () {
@@ -82,6 +84,7 @@ namespace Ndexer {
         public static string TrayCaption;
         public static string DatabasePath;
         public static Dictionary<string, TagGroup> TagGroups = new Dictionary<string, TagGroup>();
+        public static int TotalTagGroups = 0;
 
         private const int BatchSize = 256;
 
@@ -400,7 +403,7 @@ namespace Ndexer {
             if (TagGroups.ContainsKey(filename))
                 TagGroups[filename].Timestamp = lastWriteTime;
             else
-                TagGroups.Add(filename, new TagGroup(filename, lastWriteTime));
+                TagGroups.Add(filename, new TagGroup(filename, lastWriteTime, TotalTagGroups++));
         }
 
         public static IEnumerator<object> UpdateIndex (BlockingQueue<string> sourceFiles) {
@@ -456,7 +459,7 @@ namespace Ndexer {
             };
 
             Func<TagGroup, bool> shouldCommit = (tg) => {
-                return (tg != currentTagGroup[0]);
+                return (tg != currentTagGroup[0]) && (currentTagGroup[0] != null) && (tg.Index < currentTagGroup[0].Index);
             };
 
             Scheduler.Start(
