@@ -70,6 +70,10 @@ namespace Ndexer {
                 lvFileTypes.SelectedIndices.Add(Math.Min(oldIndex.Value, lvFileTypes.Items.Count - 1));
 
             lvFileTypes.EndUpdate();
+
+            if (lvFileTypes.SelectedIndices.Count > 0)
+                lvFileTypes.EnsureVisible(lvFileTypes.SelectedIndices[0]);
+
             cmdRemoveFileType.Enabled = (lvFileTypes.SelectedIndices.Count > 0);
         }
 
@@ -93,6 +97,10 @@ namespace Ndexer {
                 lvFolders.SelectedIndices.Add(Math.Min(oldIndex.Value, lvFolders.Items.Count - 1));
 
             lvFolders.EndUpdate();
+
+            if (lvFolders.SelectedIndices.Count > 0)
+                lvFolders.EnsureVisible(lvFolders.SelectedIndices[0]);
+
             cmdRemoveFolder.Enabled = (lvFolders.SelectedIndices.Count > 0);
         }
 
@@ -208,7 +216,10 @@ namespace Ndexer {
                     if (!FileTypes.ContainsKey(dlg.Language))
                         FileTypes[dlg.Language] = new List<string>();
 
-                    FileTypes[dlg.Language].Add(dlg.Filter);
+                    string[] filters = dlg.Filter.Split(' ', ';');
+
+                    foreach (string filter in filters)
+                        FileTypes[dlg.Language].Add(filter);
 
                     RefreshFileTypeList();
                     NeedRestart = true;

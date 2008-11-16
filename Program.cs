@@ -211,6 +211,29 @@ namespace Ndexer {
             return buffer.ToArray();
         }
 
+        public static Dictionary<string, string> GetLanguageMaps () {
+            var info = new ProcessStartInfo(GetCTagsPath(), "--list-maps");
+            info.CreateNoWindow = true;
+            info.WindowStyle = ProcessWindowStyle.Hidden;
+            info.ErrorDialog = false;
+            info.RedirectStandardOutput = true;
+            info.UseShellExecute = false;
+
+            var result = new Dictionary<string, string>();
+
+            using (var process = Process.Start(info)) {
+                process.WaitForExit();
+                while (!process.StandardOutput.EndOfStream) {
+                    string line = process.StandardOutput.ReadLine();
+                    string[] parts = line.Split(new char[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length == 2)
+                        result.Add(parts[0], parts[1]);
+                }
+            }
+
+            return result;
+        }
+
         public static string[] GetDirectorNames () {
             var results = new List<string>();
             var types = Assembly.GetExecutingAssembly().GetTypes();

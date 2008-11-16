@@ -43,6 +43,7 @@
             this.txtEditorLocation = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.cbTextEditor = new System.Windows.Forms.ComboBox();
+            this.colName = new System.Windows.Forms.ColumnHeader();
             this.gbFileTypes.SuspendLayout();
             this.gbFolders.SuspendLayout();
             this.gbEditor.SuspendLayout();
@@ -157,6 +158,8 @@
             this.lvFolders.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
                         | System.Windows.Forms.AnchorStyles.Left)
                         | System.Windows.Forms.AnchorStyles.Right)));
+            this.lvFolders.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.colName});
             this.lvFolders.FullRowSelect = true;
             this.lvFolders.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
             this.lvFolders.HideSelection = false;
@@ -166,7 +169,7 @@
             this.lvFolders.SmallImageList = this.ilFolders;
             this.lvFolders.TabIndex = 0;
             this.lvFolders.UseCompatibleStateImageBehavior = false;
-            this.lvFolders.View = System.Windows.Forms.View.List;
+            this.lvFolders.View = System.Windows.Forms.View.Details;
             this.lvFolders.SelectedIndexChanged += new System.EventHandler(this.lvFolders_SelectedIndexChanged);
             // 
             // ilFolders
@@ -256,6 +259,11 @@
             this.cbTextEditor.Size = new System.Drawing.Size(376, 21);
             this.cbTextEditor.TabIndex = 0;
             // 
+            // colName
+            // 
+            this.colName.Text = "Folder";
+            this.colName.Width = 372;
+            // 
             // ConfigurationDialog
             // 
             this.AcceptButton = this.cmdOK;
@@ -303,5 +311,6 @@
         private System.Windows.Forms.ListView lvFileTypes;
         private System.Windows.Forms.ImageList ilFileTypes;
         private System.Windows.Forms.ColumnHeader colFilter;
+        private System.Windows.Forms.ColumnHeader colName;
     }
 }

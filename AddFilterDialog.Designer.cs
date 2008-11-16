@@ -64,7 +64,6 @@
             this.txtFilter.Name = "txtFilter";
             this.txtFilter.Size = new System.Drawing.Size(309, 20);
             this.txtFilter.TabIndex = 3;
-            this.txtFilter.Text = "*.*";
             // 
             // cmbLanguage
             // 
@@ -76,6 +75,7 @@
             this.cmbLanguage.Name = "cmbLanguage";
             this.cmbLanguage.Size = new System.Drawing.Size(309, 21);
             this.cmbLanguage.TabIndex = 1;
+            this.cmbLanguage.SelectedIndexChanged += new System.EventHandler(this.cmbLanguage_SelectedIndexChanged);
             // 
             // lblLanguage
             // 
