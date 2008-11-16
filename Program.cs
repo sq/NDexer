@@ -192,10 +192,8 @@ namespace Ndexer {
             }
         }
 
-        public static string[] GetLanguageNames () {
-            var buffer = new List<string>();
-
-            var info = new ProcessStartInfo(GetCTagsPath(), "--list-languages");
+        public static IEnumerable<string> GetProcessOutput (string filename, string arguments) {
+            var info = new ProcessStartInfo(filename, arguments);
             info.CreateNoWindow = true;
             info.WindowStyle = ProcessWindowStyle.Hidden;
             info.ErrorDialog = false;
@@ -204,31 +202,29 @@ namespace Ndexer {
 
             using (var process = Process.Start(info)) {
                 process.WaitForExit();
-                while (!process.StandardOutput.EndOfStream)
-                    buffer.Add(process.StandardOutput.ReadLine());
-            }
 
-            return buffer.ToArray();
+                while (!process.StandardOutput.EndOfStream)
+                    yield return process.StandardOutput.ReadLine();
+            }
+        }
+
+        public static string[] GetLanguageNames () {
+            return GetProcessOutput(
+                GetCTagsPath(), 
+                "--list-languages"
+            ).ToArray();
         }
 
         public static Dictionary<string, string> GetLanguageMaps () {
-            var info = new ProcessStartInfo(GetCTagsPath(), "--list-maps");
-            info.CreateNoWindow = true;
-            info.WindowStyle = ProcessWindowStyle.Hidden;
-            info.ErrorDialog = false;
-            info.RedirectStandardOutput = true;
-            info.UseShellExecute = false;
-
             var result = new Dictionary<string, string>();
 
-            using (var process = Process.Start(info)) {
-                process.WaitForExit();
-                while (!process.StandardOutput.EndOfStream) {
-                    string line = process.StandardOutput.ReadLine();
-                    string[] parts = line.Split(new char[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length == 2)
-                        result.Add(parts[0], parts[1]);
-                }
+            foreach (string line in GetProcessOutput(
+                GetCTagsPath(),
+                "--list-maps"
+            )) {
+                string[] parts = line.Split(new char[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2)
+                    result.Add(parts[0], parts[1]);
             }
 
             return result;

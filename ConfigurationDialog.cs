@@ -203,6 +203,12 @@ namespace Ndexer {
                     string folderPath = System.IO.Path.GetFullPath(fbd.SelectedPath);
                     if (!folderPath.EndsWith("\\"))
                         folderPath += "\\";
+
+                    if (Folders.FirstOrDefault(
+                            (f) => String.Compare(f, folderPath, StringComparison.CurrentCultureIgnoreCase) == 0
+                        ) != null)
+                        return;
+
                     Folders.Add(folderPath);
                     RefreshFolderList();
                     NeedRestart = true;
@@ -219,7 +225,10 @@ namespace Ndexer {
                     string[] filters = dlg.Filter.Split(' ', ';');
 
                     foreach (string filter in filters)
-                        FileTypes[dlg.Language].Add(filter);
+                        if (FileTypes[dlg.Language].FirstOrDefault(
+                                (f) => String.Compare(f, filter, StringComparison.CurrentCultureIgnoreCase) == 0
+                            ) == null)
+                            FileTypes[dlg.Language].Add(filter);
 
                     RefreshFileTypeList();
                     NeedRestart = true;
