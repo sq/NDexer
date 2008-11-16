@@ -74,6 +74,8 @@ namespace Ndexer {
             info.ErrorDialog = false;
 
             var _process = Process.Start(info);
+            _process.PriorityClass = ProcessPriorityClass.Idle;
+
             using (var process = new ChildProcess(_process))
             using (var outputAdapter = new StreamDataAdapter(process.StandardOutput, false))
             using (var inputAdapter = new StreamDataAdapter(process.StandardInput, false))

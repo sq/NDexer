@@ -404,10 +404,11 @@ namespace Ndexer {
             var changedFiles = new List<string>();
             var deletedFiles = new List<string>();
 
-            var batchCommitter = Scheduler.Start(
-                CommitBatches(batchQueue, completion),
-                TaskExecutionPolicy.RunAsBackgroundTask
-            );
+            for (int i = 0; i < System.Environment.ProcessorCount; i++)
+                Scheduler.Start(
+                    CommitBatches(batchQueue, completion),
+                    TaskExecutionPolicy.RunAsBackgroundTask
+                );
 
             using (new ActiveWorker("Scanning folders for changes")) {
                 var changeSet = new TaskIterator<TagDatabase.Change>(
