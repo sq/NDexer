@@ -50,6 +50,10 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> Commit () {
+            var textReader = Future.RunInThread((Func<string>)(() => {
+                return System.IO.File.ReadAllText(Filename);
+            }));
+
             var transaction = Program.Database.Connection.CreateTransaction();
             yield return transaction;
 
@@ -59,6 +63,11 @@ namespace Ndexer {
 
             foreach (var tag in this)
                 yield return Program.Database.AddTag(tag);
+
+            yield return textReader;
+            string content = textReader.Result as string;
+
+            yield return Program.Database.SetFullTextContentForFile(Filename, content);
 
             yield return transaction.Commit();
         }
@@ -83,7 +92,7 @@ namespace Ndexer {
         public static string DatabasePath;
         public static string LanguageMap;
 
-        private const int BatchSize = 256;
+        private const int BatchSize = 64;
 
         /// <summary>
         /// The main entry point for the application.
@@ -119,11 +128,18 @@ namespace Ndexer {
 
             ContextMenu = new ContextMenuStrip();
             ContextMenu.Items.Add(
-                "&Search", null,
+                "Search &Tags", null,
                 (e, s) => {
                     Scheduler.Start(ShowSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
                 }
             );
+            ContextMenu.Items.Add(
+                "Search &Files", null,
+                (e, s) => {
+                    Scheduler.Start(ShowFullTextSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
+                }
+            );
+            ContextMenu.Items.Add("-");
             ContextMenu.Items.Add(
                 "&Configure", null,
                 (e, s) => {
@@ -259,6 +275,14 @@ namespace Ndexer {
             dialog.Show();
         }
 
+        public static IEnumerator<object> ShowFullTextSearchTask () {
+            var rtc = new RunToCompletion(Database.OpenReadConnection());
+            yield return rtc;
+            var conn = (ConnectionWrapper)rtc.Result;
+            var dialog = new FindInFilesDialog(conn);
+            dialog.Show();
+        }
+
         private static IEnumerator<object> TeardownTask () {
             yield return Database.Dispose();
 
@@ -390,11 +414,12 @@ namespace Ndexer {
 
         public static IEnumerator<object> CommitBatches (BlockingQueue<IEnumerable<string>> batches, Future completion) {
             while (batches.Count > 0 || !completion.Completed) {
-                var f = batches.Dequeue();
+                var f = batches.Dequeue();                
                 yield return f;
 
                 var batch = f.Result as IEnumerable<string>;
-                yield return UpdateIndex(batch);
+                if (batch != null)
+                    yield return UpdateIndex(batch);
             }
         }
 
@@ -468,6 +493,7 @@ namespace Ndexer {
                 }
 
                 completion.Complete();
+                batchQueue.Enqueue(null);
 
                 System.Diagnostics.Debug.WriteLine(String.Format("Disk scan complete. {0} change(s), {1} delete(s).", numChanges, numDeletes));
             }

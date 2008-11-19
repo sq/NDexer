@@ -64,3 +64,8 @@ CREATE VIEW Tags_Denormalized AS SELECT Tags.*, SourceFiles_Path, TagContexts_Te
     Tags.TagContexts_ID = TagContexts.TagContexts_ID AND
     Tags.TagKinds_ID = TagKinds.TagKinds_ID AND
     Tags.TagLanguages_ID = TagLanguages.TagLanguages_ID;
+    
+CREATE VIRTUAL TABLE FullText USING fts3 (
+    SourceFiles_ID INTEGER PRIMARY KEY,
+    FileText TEXT
+);

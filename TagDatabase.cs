@@ -48,7 +48,8 @@ namespace Ndexer {
             _DeleteSourceFile,
             _DeleteSourceFilesAndTagsForFolder,
             _LastInsertID,
-            _InsertTag;
+            _InsertTag,
+            _SetFullTextContentForFile;
 
         private const int MemoizationLRUSize = 128;
         private int _MemoizationHits = 0;
@@ -102,20 +103,16 @@ namespace Ndexer {
             _SetPreference = Connection.BuildQuery(@"INSERT OR REPLACE INTO Preferences (Preferences_Name, Preferences_Value) VALUES (?, ?)");
             _LastInsertID = Connection.BuildQuery(@"SELECT last_insert_rowid()");
             _MakeContextID = Connection.BuildQuery(
-                @"INSERT INTO TagContexts (TagContexts_Text) VALUES (?);" +
-                @"SELECT last_insert_rowid()"
+                @"INSERT OR REPLACE INTO TagContexts (TagContexts_Text) VALUES (?)"
             );
             _MakeKindID = Connection.BuildQuery(
-                @"INSERT INTO TagKinds (TagKinds_Name) VALUES (?);" +
-                @"SELECT last_insert_rowid()"
+                @"INSERT OR REPLACE INTO TagKinds (TagKinds_Name) VALUES (?)"
             );
             _MakeLanguageID = Connection.BuildQuery(
-                @"INSERT INTO TagLanguages (TagLanguages_Name) VALUES (?);" +
-                @"SELECT last_insert_rowid()"
+                @"INSERT OR REPLACE INTO TagLanguages (TagLanguages_Name) VALUES (?)"
             );
             _MakeSourceFileID = Connection.BuildQuery(
-                @"INSERT OR REPLACE INTO SourceFiles (SourceFiles_Path, SourceFiles_Timestamp) VALUES (?, ?);" +
-                @"SELECT last_insert_rowid()"
+                @"INSERT OR REPLACE INTO SourceFiles (SourceFiles_Path, SourceFiles_Timestamp) VALUES (?, ?)"
             );
             _DeleteTagsForFile = Connection.BuildQuery(@"DELETE FROM Tags WHERE SourceFiles_ID = ?");
             _DeleteSourceFile = Connection.BuildQuery(
@@ -135,6 +132,10 @@ namespace Ndexer {
                 @"?, ?, ?, ?, ?, ?" +
                 @");" +
                 @"SELECT last_insert_rowid()"
+            );
+            _SetFullTextContentForFile = Connection.BuildQuery(
+                @"INSERT OR REPLACE INTO FullText (SourceFiles_ID, FileText) VALUES (@p0, @p1);" + 
+                @"UPDATE FullText_content SET c1FileText = '' WHERE c0SourceFiles_ID = @p0"
             );
         }
 
@@ -398,8 +399,12 @@ namespace Ndexer {
         }
 
         internal IEnumerator<object> MakeSourceFileID (string path, long timestamp) {
-            var f = _MakeSourceFileID.ExecuteScalar(path, timestamp);
+            var f = _MakeSourceFileID.ExecuteNonQuery(path, timestamp);
             yield return f;
+
+            f = _GetSourceFileID.ExecuteScalar(path);
+            yield return f;
+
             yield return new Result(f.Result);
         }
 
@@ -415,6 +420,10 @@ namespace Ndexer {
             } else {
                 f = _MakeKindID.ExecuteScalar(kind);
                 yield return f;
+
+                f = _GetKindID.ExecuteScalar(kind);
+                yield return f;
+
                 yield return new Result(f.Result);
             }
         }
@@ -431,6 +440,10 @@ namespace Ndexer {
             } else {
                 f = _MakeContextID.ExecuteScalar(context);
                 yield return f;
+
+                f = _GetContextID.ExecuteScalar(context);
+                yield return f;
+
                 yield return new Result(f.Result);
             }
         }
@@ -447,6 +460,10 @@ namespace Ndexer {
             } else {
                 f = _MakeLanguageID.ExecuteScalar(language);
                 yield return f;
+
+                f = _GetLanguageID.ExecuteScalar(language);
+                yield return f;
+
                 yield return new Result(f.Result);
             }
         }
@@ -479,6 +496,16 @@ namespace Ndexer {
                 resultCache[argument] = result;
                 yield return new Result(result);
             }
+        }
+
+        public IEnumerator<object> SetFullTextContentForFile (string filename, string content) {
+            var rtc = new RunToCompletion(MemoizedGetID(GetSourceFileID, filename));
+            yield return rtc;
+            var sourceFileID = (Int64)(rtc.Result);
+
+            yield return _SetFullTextContentForFile.ExecuteNonQuery(
+                sourceFileID, content
+            );
         }
 
         public IEnumerator<object> AddTag (Tag tag) {

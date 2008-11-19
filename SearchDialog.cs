@@ -258,25 +258,21 @@ namespace Ndexer {
             } catch {
                 return;
             }
-            try {
-                using (var director = Program.GetDirector()) {
-                    switch (DisplayedSearchMode) {
-                        case SearchMode.FindFiles:
-                            director.OpenFile(item.Filename);
-                            director.BringToFront();
-                            break;
-                        case SearchMode.FindTags:
-                        case SearchMode.TagsInFile:
-                        case SearchMode.TagsInContext:
-                            director.OpenFile(item.Filename, item.LineNumber);
-                            if (director is IAdvancedDirector)
-                                ((IAdvancedDirector)director).FindText(item.Name);
-                            director.BringToFront();
-                            break;
-                    } 
-                }
-            } catch (SciTENotRunningException) {
-                MessageBox.Show(this, "SciTE not running", "Error");
+            using (var director = Program.GetDirector()) {
+                switch (DisplayedSearchMode) {
+                    case SearchMode.FindFiles:
+                        director.OpenFile(item.Filename);
+                        director.BringToFront();
+                        break;
+                    case SearchMode.FindTags:
+                    case SearchMode.TagsInFile:
+                    case SearchMode.TagsInContext:
+                        director.OpenFile(item.Filename, item.LineNumber);
+                        if (director is IAdvancedDirector)
+                            ((IAdvancedDirector)director).FindText(item.Name);
+                        director.BringToFront();
+                        break;
+                } 
             }
         }
 

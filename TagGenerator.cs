@@ -140,7 +140,9 @@ namespace Ndexer {
                 }
 
                 if (_process.ExitCode != 0) {
-                    System.Windows.Forms.MessageBox.Show(String.Format("ctags terminated with exit code {0}.", _process.ExitCode), "Error");
+                    throw new Exception(
+                        String.Format("ctags terminated with exit code {0}", _process.ExitCode)
+                    );
                 }
             }
         }
