@@ -133,17 +133,27 @@ namespace Ndexer {
         }
 
         private IEnumerator<object> WritePreferences () {
+            var errors = new List<string>();
+
             var transaction = DB.Connection.CreateTransaction();
             yield return transaction;
 
             yield return DB.SetPreference("TextEditor.Name", cbTextEditor.Text);
             yield return DB.SetPreference("TextEditor.Location", txtEditorLocation.Text);
 
+            if (!System.IO.File.Exists(txtEditorLocation.Text))
+                errors.Add(String.Format("The specified editor ('{0}') was not found.", txtEditorLocation.Text));
+
             yield return DB.Connection.ExecuteSQL("DELETE FROM Folders");
 
-            using (var query = DB.Connection.BuildQuery("INSERT INTO Folders (Folders_Path) VALUES (?)"))
-                foreach (string folder in Folders)
+            using (var query = DB.Connection.BuildQuery("INSERT INTO Folders (Folders_Path) VALUES (?)")) {
+                foreach (string folder in Folders) {
                     yield return query.ExecuteNonQuery(folder);
+
+                    if (!System.IO.Directory.Exists(folder))
+                        errors.Add(String.Format("The specified folder ('{0}') was not found.", folder));
+                }
+            }
 
             yield return DB.Connection.ExecuteSQL("DELETE FROM Filters");
 
@@ -152,26 +162,51 @@ namespace Ndexer {
                     foreach (string filter in ft.Value)
                         yield return query.ExecuteNonQuery(ft.Key, filter);
 
-            yield return transaction.Commit();
+            if (errors.Count == 0) {
+                yield return transaction.Commit();
+                yield return new Result(true);
+            } else {
+                yield return transaction.Rollback();
+                System.Windows.Forms.MessageBox.Show(this, String.Join("\n", errors.ToArray()), "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                yield return new Result(false);
+            }
         }
 
         private void cmdCancel_Click (object sender, EventArgs e) {
+            this.DialogResult = DialogResult.Cancel;
+
             this.Hide();
             this.Dispose();
         }
 
-        private void cmdOK_Click (object sender, EventArgs e) {
+        private IEnumerator<object> onOK() {
             this.Enabled = false;
             this.UseWaitCursor = true;
 
-            Program.Scheduler.WaitFor(
-                Program.Scheduler.Start(
-                    WritePreferences(),
-                    TaskExecutionPolicy.RunAsBackgroundTask
-            ));
+            var rtc = new RunToCompletion(
+                WritePreferences(), 
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
+            yield return rtc;
 
-            this.Hide();
-            this.Dispose();
+            bool result = (bool)rtc.Result;
+
+            if (result) {
+                this.DialogResult = DialogResult.OK;
+
+                this.Hide();
+                this.Dispose();
+            } else {
+                this.Enabled = true;
+                this.UseWaitCursor = false;
+            }
+        }
+
+        private void cmdOK_Click (object sender, EventArgs e) {
+            Program.Scheduler.Start(
+                onOK(),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
         }
 
         private void cmdBrowseForEditor_Click (object sender, EventArgs e) {

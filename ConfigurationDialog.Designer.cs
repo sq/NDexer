@@ -35,6 +35,7 @@
             this.cmdAddFolder = new System.Windows.Forms.Button();
             this.cmdRemoveFolder = new System.Windows.Forms.Button();
             this.lvFolders = new System.Windows.Forms.ListView();
+            this.colName = new System.Windows.Forms.ColumnHeader();
             this.ilFolders = new System.Windows.Forms.ImageList(this.components);
             this.cmdCancel = new System.Windows.Forms.Button();
             this.cmdOK = new System.Windows.Forms.Button();
@@ -43,7 +44,6 @@
             this.txtEditorLocation = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.cbTextEditor = new System.Windows.Forms.ComboBox();
-            this.colName = new System.Windows.Forms.ColumnHeader();
             this.gbFileTypes.SuspendLayout();
             this.gbFolders.SuspendLayout();
             this.gbEditor.SuspendLayout();
@@ -172,6 +172,11 @@
             this.lvFolders.View = System.Windows.Forms.View.Details;
             this.lvFolders.SelectedIndexChanged += new System.EventHandler(this.lvFolders_SelectedIndexChanged);
             // 
+            // colName
+            // 
+            this.colName.Text = "Folder";
+            this.colName.Width = 372;
+            // 
             // ilFolders
             // 
             this.ilFolders.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
@@ -181,7 +186,6 @@
             // cmdCancel
             // 
             this.cmdCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cmdCancel.Location = new System.Drawing.Point(301, 388);
             this.cmdCancel.Name = "cmdCancel";
             this.cmdCancel.Size = new System.Drawing.Size(90, 25);
@@ -193,7 +197,6 @@
             // cmdOK
             // 
             this.cmdOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdOK.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.cmdOK.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.cmdOK.Location = new System.Drawing.Point(209, 388);
             this.cmdOK.Name = "cmdOK";
@@ -258,11 +261,6 @@
             this.cbTextEditor.Name = "cbTextEditor";
             this.cbTextEditor.Size = new System.Drawing.Size(376, 21);
             this.cbTextEditor.TabIndex = 0;
-            // 
-            // colName
-            // 
-            this.colName.Text = "Folder";
-            this.colName.Width = 372;
             // 
             // ConfigurationDialog
             // 

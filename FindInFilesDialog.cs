@@ -27,7 +27,7 @@ namespace Ndexer {
 
         static Color ErrorColor = Color.FromArgb(255, 220, 220);
 
-        ConnectionWrapper Connection;
+        ConnectionWrapper Connection = null;
         Future ActiveSearch = null;
         Future ActiveQueue = null;
         string ActiveSearchText = null;
@@ -38,9 +38,9 @@ namespace Ndexer {
         float LineNumberWidth;
         float LineHeight;
 
-        public FindInFilesDialog (ConnectionWrapper connection) {
-            Connection = connection;
+        public const int SearchBufferSize = 8192;
 
+        public FindInFilesDialog () {
             InitializeComponent();
 
             string temp = "AaBbIiJjQqYyZz";
@@ -49,6 +49,15 @@ namespace Ndexer {
             Size size = TextRenderer.MeasureText("00000", lbResults.Font);
             LineNumberWidth = size.Width;
             LineHeight = size.Height;
+
+            this.Enabled = false;
+            this.UseWaitCursor = true;
+        }
+
+        public void SetConnection(ConnectionWrapper connection) {
+            Connection = connection;
+            this.Enabled = true;
+            this.UseWaitCursor = false;
         }
 
         private void SetSearchResults (IList<SearchResult> items) {
@@ -161,7 +170,7 @@ namespace Ndexer {
 
                 var stream = System.IO.File.OpenRead(filename);
                 var encoding = DetectEncoding(stream);
-                using (var reader = new AsyncTextReader(new StreamDataAdapter(stream, true), encoding)) {
+                using (var reader = new AsyncTextReader(new StreamDataAdapter(stream, true), encoding, SearchBufferSize)) {
                     while (true) {
                         f = reader.ReadLine();
                         yield return f;
@@ -216,7 +225,10 @@ namespace Ndexer {
                     }
 
                     completionFuture.Complete();
-                    filenames.Enqueue(null);
+
+                    while (filenames.Count < 0)
+                        filenames.Enqueue(null);
+
                     yield return fileSearch;
                 }
             }

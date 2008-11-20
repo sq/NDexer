@@ -333,6 +333,8 @@ namespace Ndexer {
 
             foreach (var file in sourceFiles) {
                 bool validFolder = false;
+                bool fileExists = false;
+
                 foreach (var folder in folders) {
                     if (file.Path.StartsWith(folder)) {
                         validFolder = true;
@@ -340,7 +342,10 @@ namespace Ndexer {
                     }
                 }
 
-                if (!validFolder || !System.IO.File.Exists(file.Path))
+                if (validFolder)
+                    fileExists = System.IO.File.Exists(file.Path);
+
+                if (!validFolder || !fileExists)
                     yield return new NextValue(
                         new Change { Filename = file.Path, Deleted = true }
                     );

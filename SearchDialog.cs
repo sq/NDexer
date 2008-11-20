@@ -31,7 +31,7 @@ namespace Ndexer {
             public long LineNumber;
         }
 
-        ConnectionWrapper Connection;
+        ConnectionWrapper Connection = null;
         Future ActiveSearch = null;
         Future ActiveQueue = null;
         string ActiveSearchText = null;
@@ -42,12 +42,19 @@ namespace Ndexer {
         IList<SearchResult> SearchResults = new List<SearchResult>();
         SearchMode DisplayedSearchMode = SearchMode.None;
 
-        public SearchDialog (ConnectionWrapper connection) {
-            Connection = connection;
-
+        public SearchDialog () {
             InitializeComponent();
 
             lvResults_SizeChanged(lvResults, EventArgs.Empty);
+
+            this.Enabled = false;
+            this.UseWaitCursor = true;
+        }
+
+        public void SetConnection(ConnectionWrapper connection) {
+            Connection = connection;
+            this.Enabled = true;
+            this.UseWaitCursor = false;
         }
 
         private int CalculateLineNumberSize() {

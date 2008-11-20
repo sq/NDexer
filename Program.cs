@@ -92,7 +92,7 @@ namespace Ndexer {
         public static string DatabasePath;
         public static string LanguageMap;
 
-        private const int BatchSize = 64;
+        private const int BatchSize = 512;
 
         /// <summary>
         /// The main entry point for the application.
@@ -202,7 +202,7 @@ namespace Ndexer {
                     ) == DialogResult.Yes) {
                 var trans = Database.Connection.CreateTransaction();
                 yield return trans;
-                yield return Database.Connection.ExecuteSQL("DELETE FROM Tags; DELETE FROM SourceFiles; DELETE FROM TagContexts; DELETE FROM TagKinds; DELETE FROM TagLanguages");
+                yield return Database.Connection.ExecuteSQL("DELETE FROM Tags; DELETE FROM SourceFiles; DELETE FROM TagContexts; DELETE FROM TagKinds; DELETE FROM TagLanguages; DELETE FROM FullText");
                 yield return trans.Commit();
                 yield return RestartTask();
             }
@@ -268,19 +268,23 @@ namespace Ndexer {
         }
 
         public static IEnumerator<object> ShowSearchTask () {
+            var dialog = new SearchDialog();
+            dialog.Show();
+
             var rtc = new RunToCompletion(Database.OpenReadConnection());
             yield return rtc;
             var conn = (ConnectionWrapper)rtc.Result;
-            var dialog = new SearchDialog(conn);
-            dialog.Show();
+            dialog.SetConnection(conn);
         }
 
         public static IEnumerator<object> ShowFullTextSearchTask () {
+            var dialog = new FindInFilesDialog();
+            dialog.Show();
+
             var rtc = new RunToCompletion(Database.OpenReadConnection());
             yield return rtc;
             var conn = (ConnectionWrapper)rtc.Result;
-            var dialog = new FindInFilesDialog(conn);
-            dialog.Show();
+            dialog.SetConnection(conn);
         }
 
         private static IEnumerator<object> TeardownTask () {
@@ -493,7 +497,9 @@ namespace Ndexer {
                 }
 
                 completion.Complete();
-                batchQueue.Enqueue(null);
+
+                while (batchQueue.Count < 0)
+                    batchQueue.Enqueue(null);
 
                 System.Diagnostics.Debug.WriteLine(String.Format("Disk scan complete. {0} change(s), {1} delete(s).", numChanges, numDeletes));
             }
