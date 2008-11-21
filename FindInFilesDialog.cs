@@ -83,7 +83,7 @@ namespace Ndexer {
                 @"FullText.SourceFiles_ID = SourceFiles.SourceFiles_ID"
             );
 
-            var escapedSearchString = searchText.Replace("\"", "\"\"").Replace("*", "");
+            var escapedSearchString = searchText.Replace("\"", "\"\"").Replace("*", " ");
             var queryText = String.Format("\"{0}\"", escapedSearchString);
             return new DbTaskIterator(query, queryText);
         }

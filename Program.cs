@@ -440,16 +440,21 @@ namespace Ndexer {
                 );
 
             using (new ActiveWorker("Scanning folders for changes")) {
-                var changeSet = new TaskIterator<TagDatabase.Change>(
-                    Database.UpdateFileListAndGetChangeSet()
+                var changeSet = new BlockingQueue<TagDatabase.Change>();
+                
+                var changeGenerator = Scheduler.Start(
+                     Database.UpdateFileListAndGetChangeSet(changeSet),
+                     TaskExecutionPolicy.RunAsBackgroundTask
                 );
-                yield return changeSet.Start();
                 
                 int numChanges = 0;
                 int numDeletes = 0;
 
-                while (!changeSet.Disposed) {
-                    var change = changeSet.Current;
+                while (!changeGenerator.Completed || (changeSet.Count > 0)) {
+                    var f = changeSet.Dequeue();
+                    yield return f;
+                    var change = (TagDatabase.Change)f.Result;
+
                     if (change.Deleted) {
                         deletedFiles.Add(change.Filename);
                         numDeletes += 1;
@@ -476,8 +481,6 @@ namespace Ndexer {
 
                         batchQueue.Enqueue(batch);
                     }
-
-                    yield return changeSet.MoveNext();
                 }
 
                 if (deletedFiles.Count > 0) {

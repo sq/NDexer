@@ -156,11 +156,20 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> OpenReadConnection () {
-            var conn = new SQLiteConnection(NativeConnection.ConnectionString + ";Read Only=True");
-            yield return Future.RunInThread((Action)conn.Open);
+            var connectionString = NativeConnection.ConnectionString + ";Read Only=True";
+
+            var f = Future.RunInThread(
+                (Func<SQLiteConnection>)(() => {
+                    var conn = new SQLiteConnection(connectionString);
+                    conn.Open();
+                    return conn;
+                })
+            );
+            yield return f;
+
             var result = new ConnectionWrapper(
                 Scheduler,
-                conn
+                f.Result as SQLiteConnection
             );
             yield return new Result(result);
         }
@@ -313,7 +322,7 @@ namespace Ndexer {
             yield return new Result(folders);
         }
 
-        public IEnumerator<object> UpdateFileListAndGetChangeSet () {
+        public IEnumerator<object> UpdateFileListAndGetChangeSet (BlockingQueue<Change> changeSet) {
             var rtc = new RunToCompletion(GetFilterPatterns());
             yield return rtc;
             var filters = String.Join(";", (string[])rtc.Result);
@@ -322,35 +331,32 @@ namespace Ndexer {
             yield return rtc;
             var folders = (string[])rtc.Result;
 
-            SourceFile[] sourceFiles;
-
             using (var iterator = new TaskIterator<SourceFile>(GetSourceFiles())) {
                 yield return iterator.Start();
-                var ta = iterator.ToArray();
-                yield return ta;
-                sourceFiles = (SourceFile[])ta.Result;
-            }
 
-            foreach (var file in sourceFiles) {
-                bool validFolder = false;
-                bool fileExists = false;
+                while (!iterator.Disposed) {
+                    var file = iterator.Current;
 
-                foreach (var folder in folders) {
-                    if (file.Path.StartsWith(folder)) {
-                        validFolder = true;
-                        break;
+                    bool validFolder = false;
+                    bool fileExists = false;
+
+                    foreach (var folder in folders) {
+                        if (file.Path.StartsWith(folder)) {
+                            validFolder = true;
+                            break;
+                        }
                     }
+
+                    if (validFolder)
+                        fileExists = System.IO.File.Exists(file.Path);
+
+                    if (!validFolder || !fileExists)
+                        changeSet.Enqueue(
+                            new Change { Filename = file.Path, Deleted = true }
+                        );
+
+                    yield return iterator.MoveNext();
                 }
-
-                if (validFolder)
-                    fileExists = System.IO.File.Exists(file.Path);
-
-                if (!validFolder || !fileExists)
-                    yield return new NextValue(
-                        new Change { Filename = file.Path, Deleted = true }
-                    );
-                else
-                    yield return new Yield();
             }
 
             foreach (var folder in folders) {
@@ -373,7 +379,7 @@ namespace Ndexer {
                         oldTimestamp = (long)rtc.Result;
 
                     if (newTimestamp > oldTimestamp)
-                        yield return new NextValue(
+                        changeSet.Enqueue(
                             new Change { Filename = entry.Name, Deleted = false }
                         );
 
