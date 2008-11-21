@@ -92,7 +92,7 @@ namespace Ndexer {
         public static string DatabasePath;
         public static string LanguageMap;
 
-        private const int BatchSize = 512;
+        private const int BatchSize = 128;
 
         /// <summary>
         /// The main entry point for the application.
@@ -428,6 +428,8 @@ namespace Ndexer {
         }
 
         public static IEnumerator<object> ScanFiles () {
+            var time_start = DateTime.UtcNow.Ticks;
+
             var completion = new Future();
             var batchQueue = new BlockingQueue<IEnumerable<string>>();
             var changedFiles = new List<string>();
@@ -446,6 +448,11 @@ namespace Ndexer {
                      Database.UpdateFileListAndGetChangeSet(changeSet),
                      TaskExecutionPolicy.RunAsBackgroundTask
                 );
+                changeGenerator.RegisterOnComplete((f, r, e) => {
+                    changeSet.Enqueue(
+                        new TagDatabase.Change()
+                    );
+                });
                 
                 int numChanges = 0;
                 int numDeletes = 0;
@@ -454,6 +461,9 @@ namespace Ndexer {
                     var f = changeSet.Dequeue();
                     yield return f;
                     var change = (TagDatabase.Change)f.Result;
+
+                    if (change.Filename == null)
+                        continue;
 
                     if (change.Deleted) {
                         deletedFiles.Add(change.Filename);
@@ -504,7 +514,10 @@ namespace Ndexer {
                 while (batchQueue.Count < 0)
                     batchQueue.Enqueue(null);
 
-                System.Diagnostics.Debug.WriteLine(String.Format("Disk scan complete. {0} change(s), {1} delete(s).", numChanges, numDeletes));
+                var time_end = DateTime.UtcNow.Ticks;
+                var elapsed = TimeSpan.FromTicks(time_end - time_start).TotalSeconds;
+
+                System.Diagnostics.Debug.WriteLine(String.Format("Disk scan complete after {2:00000.00} seconds. {0} change(s), {1} delete(s).", numChanges, numDeletes, elapsed));
             }
         }
 

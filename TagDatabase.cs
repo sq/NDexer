@@ -141,6 +141,8 @@ namespace Ndexer {
 
         public IEnumerator<object> Initialize () {
             yield return Connection.ExecuteSQL("PRAGMA synchronous=0");
+            yield return Connection.ExecuteSQL("PRAGMA auto_vacuum=full");
+            yield return Connection.ExecuteSQL("PRAGMA journal_mode=MEMORY");
         }
 
         public IEnumerator<object> Compact () {
@@ -148,10 +150,6 @@ namespace Ndexer {
                 @"DELETE FROM TagContexts WHERE (" +
                 @"SELECT COUNT(*) FROM Tags WHERE " +
                 @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
-            );
-
-            yield return Connection.ExecuteSQL(
-                @"VACUUM"
             );
         }
 
