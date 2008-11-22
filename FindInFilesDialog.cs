@@ -344,18 +344,22 @@ namespace Ndexer {
                 var matches = Regex.Matches(context, Regex.Escape(searchText));
                 if (matches.Count > 0) {
                     var ranges = (from m in matches.Cast<Match>() select new CharacterRange(m.Index, m.Length)).ToArray();
-                    format.SetMeasurableCharacterRanges(ranges);
+                    int blockSize = Math.Min(32, ranges.Length);
+                    var temp = new CharacterRange[blockSize];
 
-                    var regions = e.Graphics.MeasureCharacterRanges(item.Context, lbResults.Font, rect, format);
+                    e.Graphics.ResetClip();
+                    e.Graphics.ExcludeClip(e.Graphics.Clip);
+
+                    for (int i = 0; i < ranges.Length; i += 32) {
+                        Array.Copy(ranges, i, temp, 0, Math.Min(blockSize, ranges.Length - i));
+                        format.SetMeasurableCharacterRanges(temp);
+
+                        foreach (var region in e.Graphics.MeasureCharacterRanges(item.Context, lbResults.Font, rect, format))
+                            e.Graphics.SetClip(region, System.Drawing.Drawing2D.CombineMode.Union);
+                    }
 
                     using (var highlightBrush = new SolidBrush(SystemColors.Highlight))
                     using (var highlightTextBrush = new SolidBrush(SystemColors.HighlightText)) {
-                        e.Graphics.ResetClip();
-                        e.Graphics.ExcludeClip(e.Graphics.Clip);
-
-                        foreach (var region in regions)
-                            e.Graphics.SetClip(region, System.Drawing.Drawing2D.CombineMode.Union);
-
                         e.Graphics.FillRectangle(highlightBrush, rect);
                         e.Graphics.DrawString(context, lbResults.Font, highlightTextBrush, rect, format);
                     }
