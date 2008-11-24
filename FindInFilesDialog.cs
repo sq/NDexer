@@ -101,6 +101,8 @@ namespace Ndexer {
             var buffer = new List<SearchResult>();
             var sb = new StringBuilder();
 
+            var matcher = new Regex(Regex.Escape(searchText), RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+
             int numFiles = 0;
 
             while (filenames.Count > 0 || !completionFuture.Completed) {
@@ -142,7 +144,7 @@ namespace Ndexer {
                 var stepSearch = (Action)(() => {
                     string currentLine = lineBuffer[1].Text;
 
-                    if ((currentLine != null) && (currentLine.Contains(searchText)))
+                    if ((currentLine != null) && matcher.IsMatch(currentLine))
                         insertResult();
                 });
 
