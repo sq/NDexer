@@ -414,6 +414,8 @@ namespace Ndexer {
             f = _GetSourceFileID.ExecuteScalar(path);
             yield return f;
 
+            FlushMemoizedIDsForTask(GetSourceFileID, path);
+
             yield return new Result(f.Result);
         }
 
@@ -475,6 +477,25 @@ namespace Ndexer {
 
                 yield return new Result(f.Result);
             }
+        }
+
+        public void FlushMemoizedIDsForTask (Func<string, IEnumerator<object>> task, string argument) {
+            string taskName = task.Method.Name;
+
+            if (argument == null) {
+                if (_MemoizationCache.ContainsKey(taskName))
+                    _MemoizationCache.Remove(taskName);
+            } else {
+                LRUCache<string, object> resultCache = null;
+                if (_MemoizationCache.TryGetValue(taskName, out resultCache)) {
+                    if (resultCache.ContainsKey(argument))
+                        resultCache.Remove(argument);
+                }
+            }
+        }
+
+        public void FlushMemoizedIDsForTask (Func<string, IEnumerator<object>> task) {
+            FlushMemoizedIDsForTask(task, null);
         }
 
         public void FlushMemoizedIDs () {
