@@ -79,6 +79,7 @@ namespace Ndexer {
 
     public static class Program {
         public const string RevisionString = "$Rev$";
+        public const long SchemaVersion = 1;
         public static int Revision;
 
         public static TaskScheduler Scheduler;
@@ -115,8 +116,15 @@ namespace Ndexer {
 
             DatabasePath = System.IO.Path.GetFullPath(argv[0]);
 
-            if (!System.IO.File.Exists(DatabasePath))
+            if (!System.IO.File.Exists(DatabasePath)) {
                 System.IO.File.Copy(GetDataPath() + @"\ndexer.db", DatabasePath);
+            } else {
+                if (System.IO.File.Exists(DatabasePath + "_new")) {
+                    System.IO.File.Move(DatabasePath, DatabasePath + "_old");
+                    System.IO.File.Move(DatabasePath + "_new", DatabasePath);
+                    System.IO.File.Delete(DatabasePath + "_old");
+                }
+            }
 
             Scheduler = new TaskScheduler(JobQueue.WindowsMessageBased);
 
@@ -200,10 +208,93 @@ namespace Ndexer {
                         "Are you sure you want to rebuild the index? This will take a while!", "Rebuild Index",
                         MessageBoxButtons.YesNo, MessageBoxIcon.Question
                     ) == DialogResult.Yes) {
-                var trans = Database.Connection.CreateTransaction();
+
+                yield return RebuildIndexTask();
+            }
+        }
+
+        public static IEnumerator<object> GetSchemaVersion (ConnectionWrapper cw) {
+            using (var q = cw.BuildQuery("PRAGMA user_version")) {
+                var f = q.ExecuteScalar();
+                yield return f;
+                yield return new Result((long)f.Result);
+            }
+        }
+
+        public static IEnumerator<object> RebuildIndexTask () {
+            using (new ActiveWorker("Rebuilding index...")) {
+                System.IO.File.Copy(GetDataPath() + @"\ndexer.db", DatabasePath + "_new");
+
+                var conn = new SQLiteConnection(String.Format("Data Source={0}", DatabasePath + "_new"));
+                conn.Open();
+                var cw = new ConnectionWrapper(Scheduler, conn);
+
+                yield return cw.ExecuteSQL("PRAGMA auto_vacuum=none");
+
+                var rtc = new RunToCompletion(GetSchemaVersion(cw));
+                yield return rtc;
+                if (SchemaVersion.CompareTo(rtc.Result) != 0) {
+                    MessageBox.Show(
+                        String.Format(
+                            @"Data\NDexer.db is version {0}, but your version of NDexer was built against version {1}. This probably means you need to install the latest version from scratch.", 
+                            rtc.Result, SchemaVersion
+                        ),
+                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error
+                    );
+
+                    yield return ExitTask();
+
+                    yield break;
+                }
+
+                var trans = cw.CreateTransaction();
                 yield return trans;
-                yield return Database.Connection.ExecuteSQL("DELETE FROM Tags; DELETE FROM SourceFiles; DELETE FROM TagContexts; DELETE FROM TagKinds; DELETE FROM TagLanguages; DELETE FROM FullText");
+
+                using (var iter = new TaskIterator<TagDatabase.Folder>(Database.GetFolders())) {
+                    yield return iter.Start();
+
+                    while (!iter.Disposed) {
+                        yield return cw.ExecuteSQL(
+                            "INSERT INTO Folders (Folders_Path) VALUES (?)",
+                            iter.Current.Path
+                        );
+
+                        yield return iter.MoveNext();
+                    }
+                }
+
+                using (var iter = new TaskIterator<TagDatabase.Filter>(Database.GetFilters())) {
+                    yield return iter.Start();
+
+                    while (!iter.Disposed) {
+                        yield return cw.ExecuteSQL(
+                            "INSERT INTO Filters (Filters_Pattern, Filters_Language) VALUES (?, ?)",
+                            iter.Current.Pattern, iter.Current.Language
+                        );
+
+                        yield return iter.MoveNext();
+                    }
+                }
+
+                using (var iter = new DbTaskIterator(
+                    Database.Connection.BuildQuery("SELECT Preferences_Name, Preferences_Value FROM Preferences")
+                )) {
+                    yield return iter.Start();
+
+                    while (!iter.Disposed) {
+                        yield return cw.ExecuteSQL(
+                            "INSERT INTO Preferences (Preferences_Name, Preferences_Value) VALUES (?, ?)",
+                            iter.Current.GetValue(0), iter.Current.GetValue(1)
+                        );
+
+                        yield return iter.MoveNext();
+                    }
+                }
+
                 yield return trans.Commit();
+
+                yield return Database.Connection.Dispose();
+
                 yield return RestartTask();
             }
         }
@@ -345,6 +436,13 @@ namespace Ndexer {
 
         public static IEnumerator<object> MainTask (string[] argv) {
             yield return Database.Initialize();
+
+            var rtc = new RunToCompletion(GetSchemaVersion(Database.Connection));
+            yield return rtc;
+            if (SchemaVersion.CompareTo(rtc.Result) != 0) {
+                yield return RebuildIndexTask();
+                yield break;
+            }
 
             yield return AutoShowConfiguration(argv);
 

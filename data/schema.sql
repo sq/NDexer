@@ -69,3 +69,5 @@ CREATE VIRTUAL TABLE FullText USING fts3 (
     SourceFiles_ID INTEGER PRIMARY KEY,
     FileText TEXT
 );
+
+PRAGMA user_version=1;
