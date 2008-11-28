@@ -146,13 +146,13 @@
     <None Include="icons\database_working_2.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="ext\squared.tasklib\tasklib.csproj">
+    <ProjectReference Include="ext\squared.tasklib\Squared.Task.csproj">
       <Project>{173ABDCA-7278-46FF-A300-D3BF8CCEF181}</Project>
-      <Name>tasklib</Name>
+      <Name>Squared.Task</Name>
     </ProjectReference>
-    <ProjectReference Include="ext\squared.util\util.csproj">
+    <ProjectReference Include="ext\squared.util\Squared.Util.csproj">
       <Project>{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}</Project>
-      <Name>util</Name>
+      <Name>Squared.Util</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
