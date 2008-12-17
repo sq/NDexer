@@ -79,8 +79,7 @@ namespace Ndexer {
             using (var process = new ChildProcess(_process))
             using (var outputAdapter = new StreamDataAdapter(process.StandardOutput, false))
             using (var inputAdapter = new StreamDataAdapter(process.StandardInput, false))
-            using (var stdout = new AsyncTextReader(outputAdapter, Encoding.ASCII))
-            using (var stdin = new AsyncTextWriter(inputAdapter, Encoding.ASCII)) {
+            using (var stdout = new AsyncTextReader(outputAdapter, Encoding.ASCII)) {
 
                 var writeLine = (Func<string, Future>)(
                     (fn) => {

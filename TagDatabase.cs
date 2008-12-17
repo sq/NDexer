@@ -57,6 +57,7 @@ namespace Ndexer {
 
         private Dictionary<string, LRUCache<string, object>> _MemoizationCache = new Dictionary<string, LRUCache<string, object>>();
         private Dictionary<string, object> _PreferenceCache = new Dictionary<string, object>();
+        private Dictionary<string, Func<string, IEnumerator<object>>> _TaskMap = new Dictionary<string, Func<string, IEnumerator<object>>>();
 
         public TaskScheduler Scheduler;
         public SQLiteConnection NativeConnection;
@@ -71,6 +72,11 @@ namespace Ndexer {
             Connection = new ConnectionWrapper(scheduler, NativeConnection);
 
             CompileQueries();
+
+            _TaskMap["GetSourceFileID"] = GetSourceFileID;
+            _TaskMap["GetKindID"] = GetKindID;
+            _TaskMap["GetLanguageID"] = GetLanguageID;
+            _TaskMap["GetContextID"] = GetContextID;
 
 #if DEBUG
             scheduler.Start(
@@ -414,7 +420,7 @@ namespace Ndexer {
             f = _GetSourceFileID.ExecuteScalar(path);
             yield return f;
 
-            FlushMemoizedIDsForTask(GetSourceFileID, path);
+            FlushMemoizedIDsForTask("GetSourceFileID", path);
 
             yield return new Result(f.Result);
         }
@@ -479,9 +485,7 @@ namespace Ndexer {
             }
         }
 
-        public void FlushMemoizedIDsForTask (Func<string, IEnumerator<object>> task, string argument) {
-            string taskName = task.Method.Name;
-
+        public void FlushMemoizedIDsForTask (string taskName, string argument) {
             if (argument == null) {
                 if (_MemoizationCache.ContainsKey(taskName))
                     _MemoizationCache.Remove(taskName);
@@ -494,19 +498,19 @@ namespace Ndexer {
             }
         }
 
-        public void FlushMemoizedIDsForTask (Func<string, IEnumerator<object>> task) {
-            FlushMemoizedIDsForTask(task, null);
+        public void FlushMemoizedIDsForTask (string taskName) {
+            FlushMemoizedIDsForTask(taskName, null);
         }
 
         public void FlushMemoizedIDs () {
             _MemoizationCache.Clear();
         }
 
-        public IEnumerator<object> MemoizedGetID (Func<string, IEnumerator<object>> task, string argument) {
+        public IEnumerator<object> MemoizedGetID (string taskName, string argument) {
             if (argument == null)
                 yield return new Result(0);
 
-            string taskName = task.Method.Name;
+            var task = _TaskMap[taskName];
             LRUCache<string, object> resultCache = null;
             if (!_MemoizationCache.TryGetValue(taskName, out resultCache)) {
                 resultCache = new LRUCache<string, object>(MemoizationLRUSize);
@@ -529,7 +533,7 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> SetFullTextContentForFile (string filename, string content) {
-            var rtc = new RunToCompletion(MemoizedGetID(GetSourceFileID, filename));
+            var rtc = new RunToCompletion(MemoizedGetID("GetSourceFileID", filename));
             yield return rtc;
             var sourceFileID = (Int64)(rtc.Result);
 
@@ -539,19 +543,19 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> AddTag (Tag tag) {
-            var rtc = new RunToCompletion(MemoizedGetID(GetSourceFileID, tag.SourceFile));
+            var rtc = new RunToCompletion(MemoizedGetID("GetSourceFileID", tag.SourceFile));
             yield return rtc;
             var sourceFileID = (Int64)(rtc.Result);
 
-            rtc = new RunToCompletion(MemoizedGetID(GetKindID, tag.Kind));
+            rtc = new RunToCompletion(MemoizedGetID("GetKindID", tag.Kind));
             yield return rtc;
             var kindID = Convert.ToInt64(rtc.Result);
 
-            rtc = new RunToCompletion(MemoizedGetID(GetContextID, tag.Context));
+            rtc = new RunToCompletion(MemoizedGetID("GetContextID", tag.Context));
             yield return rtc;
             var contextID = Convert.ToInt64(rtc.Result);
 
-            rtc = new RunToCompletion(MemoizedGetID(GetLanguageID, tag.Language));
+            rtc = new RunToCompletion(MemoizedGetID("GetLanguageID", tag.Language));
             yield return rtc;
             var languageID = Convert.ToInt64(rtc.Result);
 
