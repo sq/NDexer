@@ -98,6 +98,7 @@ namespace Ndexer {
         }
 
         IEnumerator<object> SearchInFiles (string searchText, BlockingQueue<string> filenames, Future completionFuture) {
+            var searchedFiles = new List<string>();
             var buffer = new List<SearchResult>();
             var sb = new StringBuilder();
 
@@ -113,9 +114,13 @@ namespace Ndexer {
 
                 if (filename == null)
                     continue;
+                if (searchedFiles.Contains(filename))
+                    continue;
 
                 if (PendingSearchText != null)
                     break;
+
+                searchedFiles.Add(filename);
 
                 int lineNumber = 0;
                 var lineBuffer = new LineEntry[3];
@@ -127,8 +132,12 @@ namespace Ndexer {
 
                     sb.Remove(0, sb.Length);
                     for (int i = 0; i < 3; i++) {
-                        if (lineBuffer[i].Text != null)
-                            sb.Append(lineBuffer[i].Text);
+                        if (lineBuffer[i].Text != null) {
+                            var line = lineBuffer[i].Text;
+                            if (line.Length > 1024)
+                                line = line.Substring(0, 1024);
+                            sb.Append(line);
+                        }
 
                         if (i < 2)
                             sb.Append("\r\n");
