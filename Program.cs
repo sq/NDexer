@@ -54,22 +54,23 @@ namespace Ndexer {
                 return System.IO.File.ReadAllText(Filename);
             }));
 
-            var transaction = Program.Database.Connection.CreateTransaction();
-            yield return transaction;
+            using (var transaction = Program.Database.Connection.CreateTransaction()) {
+                yield return transaction;
 
-            yield return Program.Database.DeleteTagsForFile(Filename);
+                yield return Program.Database.DeleteTagsForFile(Filename);
 
-            yield return Program.Database.MakeSourceFileID(Filename, Timestamp);
+                yield return Program.Database.MakeSourceFileID(Filename, Timestamp);
 
-            foreach (var tag in this)
-                yield return Program.Database.AddTag(tag);
+                foreach (var tag in this)
+                    yield return Program.Database.AddTag(tag);
 
-            yield return textReader;
-            string content = textReader.Result as string;
+                yield return textReader;
+                string content = textReader.Result as string;
 
-            yield return Program.Database.SetFullTextContentForFile(Filename, content);
+                yield return Program.Database.SetFullTextContentForFile(Filename, content);
 
-            yield return transaction.Commit();
+                yield return transaction.Commit();
+            }
         }
 
         public override string ToString () {
