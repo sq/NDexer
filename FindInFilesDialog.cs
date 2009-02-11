@@ -179,9 +179,9 @@ namespace Ndexer {
                     }
                 }
 
-                var stream = System.IO.File.OpenRead(filename);
-                var encoding = DetectEncoding(stream);
-                using (var reader = new AsyncTextReader(new StreamDataAdapter(stream, true), encoding, SearchBufferSize)) {
+                var adapter = new FileDataAdapter(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                var encoding = DetectEncoding(adapter.BaseStream);
+                using (var reader = new AsyncTextReader(adapter, encoding, SearchBufferSize)) {
                     while (true) {
                         f = reader.ReadLine();
                         yield return f;
