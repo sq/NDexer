@@ -264,6 +264,7 @@ namespace Ndexer {
         public IEnumerator<object> SetPreference (string name, string value) {
             var f = _SetPreference.ExecuteScalar(name, value);
             yield return f;
+            var result = f.Result;
             _PreferenceCache[name] = value;
         }
 

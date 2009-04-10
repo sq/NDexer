@@ -10,6 +10,7 @@ using System.Data.SQLite;
 using Squared.Task;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using exscape;
 
 namespace Ndexer {
     public partial class ConfigurationDialog : Form {		
@@ -104,7 +105,24 @@ namespace Ndexer {
             cmdRemoveFolder.Enabled = (lvFolders.SelectedIndices.Count > 0);
         }
 
+        private IEnumerator<object> ReadHotkeyPreference (string hotkeyName, HotkeyControl hotkeyControl) {
+            var rtc = new RunToCompletion(DB.GetPreference("Hotkeys." + hotkeyName + ".Key"));
+            yield return rtc;
+            hotkeyControl.Hotkey = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+
+            rtc = new RunToCompletion(DB.GetPreference("Hotkeys." + hotkeyName + ".Modifiers"));
+            yield return rtc;
+            hotkeyControl.HotkeyModifiers = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+        }
+
+        private IEnumerator<object> WriteHotkeyPreference (string hotkeyName, HotkeyControl hotkeyControl) {
+            yield return DB.SetPreference("Hotkeys." + hotkeyName + ".Key", hotkeyControl.Hotkey.ToString());
+            yield return DB.SetPreference("Hotkeys." + hotkeyName + ".Modifiers", hotkeyControl.HotkeyModifiers.ToString());
+        }
+
         private IEnumerator<object> ReadPreferences () {
+            txtIndexLocation.Text = Program.DatabasePath;
+
             var rtc = new RunToCompletion(DB.GetPreference("TextEditor.Name"));
             yield return rtc;
             cbTextEditor.Text = (rtc.Result as string) ?? "SciTE";
@@ -112,6 +130,9 @@ namespace Ndexer {
             rtc = new RunToCompletion(DB.GetPreference("TextEditor.Location"));
             yield return rtc;
             txtEditorLocation.Text = (rtc.Result as string) ?? @"C:\Program Files\SciTE\SciTE.exe";
+
+            yield return ReadHotkeyPreference("SearchTags", hkSearchTags);
+            yield return ReadHotkeyPreference("SearchFiles", hkSearchFiles);
 
             rtc = new RunToCompletion(DB.GetFolderPaths());
             yield return rtc;
@@ -144,6 +165,9 @@ namespace Ndexer {
             if (!System.IO.File.Exists(txtEditorLocation.Text))
                 errors.Add(String.Format("The specified editor ('{0}') was not found.", txtEditorLocation.Text));
 
+            yield return WriteHotkeyPreference("SearchTags", hkSearchTags);
+            yield return WriteHotkeyPreference("SearchFiles", hkSearchFiles);
+
             yield return DB.Connection.ExecuteSQL("DELETE FROM Folders");
 
             using (var query = DB.Connection.BuildQuery("INSERT INTO Folders (Folders_Path) VALUES (?)")) {
@@ -164,6 +188,7 @@ namespace Ndexer {
 
             if (errors.Count == 0) {
                 yield return transaction.Commit();
+                yield return Program.OnConfigurationChanged();
                 yield return new Result(true);
             } else {
                 yield return transaction.Rollback();

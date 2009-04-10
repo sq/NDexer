@@ -14,6 +14,7 @@ using Squared.Task.Data;
 using Squared.Task.IO;
 using System.Reflection;
 using System.Text;
+using MovablePython;
 
 namespace Ndexer {
     public class ActiveWorker : IDisposable {
@@ -89,6 +90,8 @@ namespace Ndexer {
         public static NotifyIcon NotifyIcon;
         public static Icon Icon_Monitoring;
         public static Icon Icon_Working_1, Icon_Working_2;
+        public static Hotkey Hotkey_Search_Tags, Hotkey_Search_Files;
+        public static NativeWindow HotkeyWindow;
         public static ContextMenuStrip ContextMenu;
         public static string TrayCaption;
         public static string DatabasePath;
@@ -130,6 +133,18 @@ namespace Ndexer {
             Scheduler = new TaskScheduler(JobQueue.WindowsMessageBased);
 
             Database = new TagDatabase(Scheduler, DatabasePath);
+
+            HotkeyWindow = new NativeWindow();
+            HotkeyWindow.CreateHandle(new CreateParams {
+                Caption = "NDexer Hotkey Window",
+                X = 0,
+                Y = 0,
+                Width = 0,
+                Height = 0,
+                Style = 0,
+                ExStyle = 0x08000000,
+                Parent = new IntPtr(-3)
+            });
 
             Icon_Monitoring = Icon.FromHandle(Properties.Resources.database_monitoring.GetHicon());
             Icon_Working_1 = Icon.FromHandle(Properties.Resources.database_working_1.GetHicon());
@@ -465,6 +480,8 @@ namespace Ndexer {
                 LanguageMap = buffer.ToString();
             }
 
+            yield return OnConfigurationChanged();
+
             using (new ActiveWorker("Compacting index")) {
                 yield return Database.Compact();
             }
@@ -513,6 +530,43 @@ namespace Ndexer {
 
                 yield return new Sleep(0.5);
             }
+        }
+
+        public static IEnumerator<object> OnConfigurationChanged () {
+            if (Hotkey_Search_Files != null)
+                Hotkey_Search_Files.Unregister();
+            if (Hotkey_Search_Tags != null)
+                Hotkey_Search_Tags.Unregister();
+
+            Keys keyCode, modifiers;
+
+            var rtc = new RunToCompletion(Database.GetPreference("Hotkeys.SearchFiles.Key"));
+            yield return rtc;
+            keyCode = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+
+            rtc = new RunToCompletion(Database.GetPreference("Hotkeys.SearchFiles.Modifiers"));
+            yield return rtc;
+            modifiers = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+
+            Hotkey_Search_Files = new Hotkey(keyCode, modifiers);
+            Hotkey_Search_Files.Pressed += (s, e) => {
+                Scheduler.Start(ShowFullTextSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
+            };
+            Hotkey_Search_Files.Register(HotkeyWindow);
+
+            rtc = new RunToCompletion(Database.GetPreference("Hotkeys.SearchTags.Key"));
+            yield return rtc;
+            keyCode = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+
+            rtc = new RunToCompletion(Database.GetPreference("Hotkeys.SearchTags.Modifiers"));
+            yield return rtc;
+            modifiers = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+
+            Hotkey_Search_Tags = new Hotkey(keyCode, modifiers);
+            Hotkey_Search_Tags.Pressed += (s, e) => {
+                Scheduler.Start(ShowSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
+            };
+            Hotkey_Search_Tags.Register(HotkeyWindow);
         }
 
         public static IEnumerator<object> CommitBatches (BlockingQueue<IEnumerable<string>> batches, Future completion) {
