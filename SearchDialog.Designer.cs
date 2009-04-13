@@ -32,8 +32,8 @@
             this.tpFindTags = new System.Windows.Forms.TabPage();
             this.tpFindFiles = new System.Windows.Forms.TabPage();
             this.tpTagsInFile = new System.Windows.Forms.TabPage();
-            this.lvResults = new Ndexer.SearchResultListView();
             this.tpTagsInContext = new System.Windows.Forms.TabPage();
+            this.lvResults = new Ndexer.SearchResultListView();
             this.sbStatus.SuspendLayout();
             this.tcFilter.SuspendLayout();
             this.SuspendLayout();
@@ -123,6 +123,16 @@
             this.tpTagsInFile.Text = "Tags in File";
             this.tpTagsInFile.UseVisualStyleBackColor = true;
             // 
+            // tpTagsInContext
+            // 
+            this.tpTagsInContext.Location = new System.Drawing.Point(4, 22);
+            this.tpTagsInContext.Name = "tpTagsInContext";
+            this.tpTagsInContext.Padding = new System.Windows.Forms.Padding(3);
+            this.tpTagsInContext.Size = new System.Drawing.Size(333, 18);
+            this.tpTagsInContext.TabIndex = 3;
+            this.tpTagsInContext.Text = "Tags in Context";
+            this.tpTagsInContext.UseVisualStyleBackColor = true;
+            // 
             // lvResults
             // 
             this.lvResults.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
@@ -148,16 +158,6 @@
             this.lvResults.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.lvResults_RetrieveVirtualItem);
             this.lvResults.DrawSubItem += new System.Windows.Forms.DrawListViewSubItemEventHandler(this.lvResults_DrawSubItem);
             // 
-            // tpTagsInContext
-            // 
-            this.tpTagsInContext.Location = new System.Drawing.Point(4, 22);
-            this.tpTagsInContext.Name = "tpTagsInContext";
-            this.tpTagsInContext.Padding = new System.Windows.Forms.Padding(3);
-            this.tpTagsInContext.Size = new System.Drawing.Size(333, 18);
-            this.tpTagsInContext.TabIndex = 3;
-            this.tpTagsInContext.Text = "Tags in Context";
-            this.tpTagsInContext.UseVisualStyleBackColor = true;
-            // 
             // SearchDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
@@ -169,7 +169,6 @@
             this.Controls.Add(this.sbStatus);
             this.Font = new System.Drawing.Font("Tahoma", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MaximizeBox = false;
             this.Name = "SearchDialog";
             this.Text = "Search";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.SearchDialog_FormClosed);

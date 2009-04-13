@@ -62,7 +62,7 @@ namespace Ndexer {
             // 
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Overflow = System.Windows.Forms.ToolStripItemOverflow.Never;
-            this.lblStatus.Size = new System.Drawing.Size(501, 17);
+            this.lblStatus.Size = new System.Drawing.Size(532, 17);
             this.lblStatus.Spring = true;
             this.lblStatus.Text = "0 result(s) found";
             this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -111,7 +111,6 @@ namespace Ndexer {
             this.Controls.Add(this.sbStatus);
             this.Font = new System.Drawing.Font("Tahoma", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MaximizeBox = false;
             this.Name = "FindInFilesDialog";
             this.Text = "Find In Files";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.SearchDialog_FormClosed);

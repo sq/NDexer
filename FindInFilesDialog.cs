@@ -11,9 +11,19 @@ using Squared.Task;
 using Squared.Task.Data;
 using System.Text.RegularExpressions;
 using Squared.Task.IO;
+using System.Reflection;
 
 namespace Ndexer {
     public partial class FindInFilesDialog : Form {
+        public class SearchQuery {
+            public string Text;
+            public Regex Regex;
+
+            public IEnumerable<string[]> SearchWords() {
+                yield break;
+            }
+        }
+
         struct LineEntry {
             public string Text;
             public int LineNumber;
@@ -76,16 +86,37 @@ namespace Ndexer {
             lbResults.EndUpdate();
         }
 
-        private DbTaskIterator BuildQuery (string searchText) {
+        private string FilterChars (string text, Func<char, bool> filter) {
+            char[] chars = text.ToCharArray();
+            for (int i = 0; i < chars.Length; i++)
+                if (!filter(chars[i]))
+                    chars[i] = ' ';
+            return new string(chars);
+        }
+
+        private DbTaskIterator BuildQuery(string searchText) {
             var query = Connection.BuildQuery(
                 @"SELECT SourceFiles_Path FROM FullText, SourceFiles WHERE " +
                 @"FullText.FileText MATCH ? AND " +
                 @"FullText.SourceFiles_ID = SourceFiles.SourceFiles_ID"
             );
 
-            var escapedSearchString = searchText.Replace("\"", "\"\"").Replace("*", " ");
-            var queryText = String.Format("\"{0}\"", escapedSearchString);
-            return new DbTaskIterator(query, queryText);
+            var re = new Regex(searchText, RegexOptions.ExplicitCapture);
+            var recode = re.GetType().GetField("code", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(re);
+            var words = (string[])(recode.GetType().GetField("_strings", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(recode));
+            var sb = new StringBuilder();
+            foreach (var word in words) {
+                if (word.Contains('\0'))
+                    continue;
+                if (sb.Length > 0)
+                    sb.Append(" ");
+                sb.Append("*");
+                sb.Append(word);
+                sb.Append("*");
+            }
+
+            Console.WriteLine("'{0}' -> '{1}'", searchText, sb.ToString());
+            return new DbTaskIterator(query, sb.ToString());
         }
 
         Encoding DetectEncoding (System.IO.Stream stream) {
@@ -102,7 +133,14 @@ namespace Ndexer {
             var buffer = new List<SearchResult>();
             var sb = new StringBuilder();
 
-            var matcher = new Regex(Regex.Escape(searchText), RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+            Regex matcher = null;
+            try {
+                matcher = new Regex(searchText, RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+            } catch {
+                yield break;
+                SetSearchResults(buffer);
+                lblStatus.Text = String.Format("{0} result(s) found.", buffer.Count);
+            }
 
             int numFiles = 0;
 
@@ -352,7 +390,7 @@ namespace Ndexer {
 
                 e.Graphics.DrawString(cleanContext, lbResults.Font, brush, rect, format);
 
-                var matches = Regex.Matches(context, Regex.Escape(searchText));
+                var matches = Regex.Matches(context, searchText);
                 if (matches.Count > 0) {
                     var ranges = (from m in matches.Cast<Match>() select new CharacterRange(m.Index, m.Length)).ToArray();
                     int blockSize = Math.Min(32, ranges.Length);

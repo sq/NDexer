@@ -45,15 +45,15 @@
             this.colName = new System.Windows.Forms.ColumnHeader();
             this.tabUI = new System.Windows.Forms.TabPage();
             this.gbHotkeys = new System.Windows.Forms.GroupBox();
+            this.lblSearchFiles = new System.Windows.Forms.Label();
+            this.hkSearchFiles = new exscape.HotkeyControl();
+            this.lblSearchTags = new System.Windows.Forms.Label();
+            this.hkSearchTags = new exscape.HotkeyControl();
             this.gbEditor = new System.Windows.Forms.GroupBox();
             this.cmdBrowseForEditor = new System.Windows.Forms.Button();
             this.txtEditorLocation = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.cbTextEditor = new System.Windows.Forms.ComboBox();
-            this.hkSearchTags = new exscape.HotkeyControl();
-            this.lblSearchTags = new System.Windows.Forms.Label();
-            this.lblSearchFiles = new System.Windows.Forms.Label();
-            this.hkSearchFiles = new exscape.HotkeyControl();
             this.tcTabs.SuspendLayout();
             this.tabIndex.SuspendLayout();
             this.gbFileTypes.SuspendLayout();
@@ -167,6 +167,7 @@
             this.cmdAddFileType.TabIndex = 7;
             this.cmdAddFileType.Text = "Add...";
             this.cmdAddFileType.UseVisualStyleBackColor = true;
+            this.cmdAddFileType.Click += new System.EventHandler(this.cmdAddFileType_Click);
             // 
             // cmdRemoveFileType
             // 
@@ -178,6 +179,7 @@
             this.cmdRemoveFileType.TabIndex = 6;
             this.cmdRemoveFileType.Text = "Remove";
             this.cmdRemoveFileType.UseVisualStyleBackColor = true;
+            this.cmdRemoveFileType.Click += new System.EventHandler(this.cmdRemoveFileType_Click);
             // 
             // lvFileTypes
             // 
@@ -195,6 +197,7 @@
             this.lvFileTypes.TabIndex = 0;
             this.lvFileTypes.UseCompatibleStateImageBehavior = false;
             this.lvFileTypes.View = System.Windows.Forms.View.Details;
+            this.lvFileTypes.SelectedIndexChanged += new System.EventHandler(this.lvFileTypes_SelectedIndexChanged);
             // 
             // colFilter
             // 
@@ -224,6 +227,7 @@
             this.cmdAddFolder.TabIndex = 5;
             this.cmdAddFolder.Text = "Add...";
             this.cmdAddFolder.UseVisualStyleBackColor = true;
+            this.cmdAddFolder.Click += new System.EventHandler(this.cmdAddFolder_Click);
             // 
             // cmdRemoveFolder
             // 
@@ -235,6 +239,7 @@
             this.cmdRemoveFolder.TabIndex = 4;
             this.cmdRemoveFolder.Text = "Remove";
             this.cmdRemoveFolder.UseVisualStyleBackColor = true;
+            this.cmdRemoveFolder.Click += new System.EventHandler(this.cmdRemoveFolder_Click);
             // 
             // lvFolders
             // 
@@ -253,6 +258,7 @@
             this.lvFolders.TabIndex = 0;
             this.lvFolders.UseCompatibleStateImageBehavior = false;
             this.lvFolders.View = System.Windows.Forms.View.Details;
+            this.lvFolders.SelectedIndexChanged += new System.EventHandler(this.lvFolders_SelectedIndexChanged);
             // 
             // colName
             // 
@@ -286,6 +292,48 @@
             this.gbHotkeys.TabStop = false;
             this.gbHotkeys.Text = "Hotkeys";
             // 
+            // lblSearchFiles
+            // 
+            this.lblSearchFiles.AutoSize = true;
+            this.lblSearchFiles.Location = new System.Drawing.Point(9, 47);
+            this.lblSearchFiles.Name = "lblSearchFiles";
+            this.lblSearchFiles.Size = new System.Drawing.Size(68, 13);
+            this.lblSearchFiles.TabIndex = 11;
+            this.lblSearchFiles.Text = "Search Files:";
+            // 
+            // hkSearchFiles
+            // 
+            this.hkSearchFiles.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.hkSearchFiles.Hotkey = System.Windows.Forms.Keys.None;
+            this.hkSearchFiles.HotkeyModifiers = System.Windows.Forms.Keys.None;
+            this.hkSearchFiles.Location = new System.Drawing.Point(86, 44);
+            this.hkSearchFiles.Name = "hkSearchFiles";
+            this.hkSearchFiles.Size = new System.Drawing.Size(282, 20);
+            this.hkSearchFiles.TabIndex = 10;
+            this.hkSearchFiles.Text = "None";
+            // 
+            // lblSearchTags
+            // 
+            this.lblSearchTags.AutoSize = true;
+            this.lblSearchTags.Location = new System.Drawing.Point(9, 21);
+            this.lblSearchTags.Name = "lblSearchTags";
+            this.lblSearchTags.Size = new System.Drawing.Size(71, 13);
+            this.lblSearchTags.TabIndex = 9;
+            this.lblSearchTags.Text = "Search Tags:";
+            // 
+            // hkSearchTags
+            // 
+            this.hkSearchTags.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.hkSearchTags.Hotkey = System.Windows.Forms.Keys.None;
+            this.hkSearchTags.HotkeyModifiers = System.Windows.Forms.Keys.None;
+            this.hkSearchTags.Location = new System.Drawing.Point(86, 18);
+            this.hkSearchTags.Name = "hkSearchTags";
+            this.hkSearchTags.Size = new System.Drawing.Size(282, 20);
+            this.hkSearchTags.TabIndex = 8;
+            this.hkSearchTags.Text = "None";
+            // 
             // gbEditor
             // 
             this.gbEditor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
@@ -311,6 +359,7 @@
             this.cmdBrowseForEditor.TabIndex = 3;
             this.cmdBrowseForEditor.Text = "…";
             this.cmdBrowseForEditor.UseVisualStyleBackColor = true;
+            this.cmdBrowseForEditor.Click += new System.EventHandler(this.cmdBrowseForEditor_Click);
             // 
             // txtEditorLocation
             // 
@@ -340,46 +389,6 @@
             this.cbTextEditor.Name = "cbTextEditor";
             this.cbTextEditor.Size = new System.Drawing.Size(362, 21);
             this.cbTextEditor.TabIndex = 0;
-            // 
-            // hkSearchTags
-            // 
-            this.hkSearchTags.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.hkSearchTags.Hotkey = System.Windows.Forms.Keys.None;
-            this.hkSearchTags.HotkeyModifiers = System.Windows.Forms.Keys.None;
-            this.hkSearchTags.Location = new System.Drawing.Point(86, 18);
-            this.hkSearchTags.Name = "hkSearchTags";
-            this.hkSearchTags.Size = new System.Drawing.Size(282, 20);
-            this.hkSearchTags.TabIndex = 8;
-            // 
-            // lblSearchTags
-            // 
-            this.lblSearchTags.AutoSize = true;
-            this.lblSearchTags.Location = new System.Drawing.Point(9, 21);
-            this.lblSearchTags.Name = "lblSearchTags";
-            this.lblSearchTags.Size = new System.Drawing.Size(71, 13);
-            this.lblSearchTags.TabIndex = 9;
-            this.lblSearchTags.Text = "Search Tags:";
-            // 
-            // lblSearchFiles
-            // 
-            this.lblSearchFiles.AutoSize = true;
-            this.lblSearchFiles.Location = new System.Drawing.Point(9, 47);
-            this.lblSearchFiles.Name = "lblSearchFiles";
-            this.lblSearchFiles.Size = new System.Drawing.Size(68, 13);
-            this.lblSearchFiles.TabIndex = 11;
-            this.lblSearchFiles.Text = "Search Files:";
-            // 
-            // hkSearchFiles
-            // 
-            this.hkSearchFiles.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.hkSearchFiles.Hotkey = System.Windows.Forms.Keys.None;
-            this.hkSearchFiles.HotkeyModifiers = System.Windows.Forms.Keys.None;
-            this.hkSearchFiles.Location = new System.Drawing.Point(86, 44);
-            this.hkSearchFiles.Name = "hkSearchFiles";
-            this.hkSearchFiles.Size = new System.Drawing.Size(282, 20);
-            this.hkSearchFiles.TabIndex = 10;
             // 
             // ConfigurationDialog
             // 
