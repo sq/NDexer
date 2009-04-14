@@ -16,11 +16,26 @@ using System.Reflection;
 namespace Ndexer {
     public partial class FindInFilesDialog : Form {
         public class SearchQuery {
-            public string Text;
-            public Regex Regex;
+            public readonly string Text;
+            public readonly Regex Regex;
+            public readonly string[] SearchWords;
 
-            public IEnumerable<string[]> SearchWords() {
-                yield break;
+            public SearchQuery(string regex) {
+                Text = regex;
+                Regex = new Regex(regex, RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+
+                // Ph'nglui Mglw'nafh Regex R'lyeh wgah'nagl fhtagn
+                var tempRe = new Regex(regex, RegexOptions.ExplicitCapture);
+                var recode = tempRe.GetType().GetField("code", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(tempRe);
+                var words = (string[])(recode.GetType().GetField("_strings", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(recode));
+                var result = new List<string>();
+                foreach (var word in words) {
+                    if (word.Contains('\0'))
+                        continue;
+
+                    result.Add(word);
+                }
+                SearchWords = result.ToArray();
             }
         }
 
@@ -40,8 +55,8 @@ namespace Ndexer {
         ConnectionWrapper Connection = null;
         Future ActiveSearch = null;
         Future ActiveQueue = null;
-        string ActiveSearchText = null;
-        string PendingSearchText = null;
+        SearchQuery ActiveSearchQuery = null;
+        SearchQuery PendingSearchQuery = null;
         ListViewItem DefaultListItem = new ListViewItem(new string[2]);
         IList<SearchResult> SearchResults = new List<SearchResult>();
 
@@ -94,28 +109,24 @@ namespace Ndexer {
             return new string(chars);
         }
 
-        private DbTaskIterator BuildQuery(string searchText) {
+        private DbTaskIterator BuildQuery(SearchQuery search) {
             var query = Connection.BuildQuery(
                 @"SELECT SourceFiles_Path FROM FullText, SourceFiles WHERE " +
                 @"FullText.FileText MATCH ? AND " +
                 @"FullText.SourceFiles_ID = SourceFiles.SourceFiles_ID"
             );
 
-            var re = new Regex(searchText, RegexOptions.ExplicitCapture);
-            var recode = re.GetType().GetField("code", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(re);
-            var words = (string[])(recode.GetType().GetField("_strings", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(recode));
             var sb = new StringBuilder();
-            foreach (var word in words) {
-                if (word.Contains('\0'))
-                    continue;
+            foreach (var word in search.SearchWords) {
                 if (sb.Length > 0)
                     sb.Append(" ");
+
+                var filteredWord = FilterChars(word, (ch) => char.IsLetterOrDigit(ch));
                 sb.Append("*");
-                sb.Append(word);
+                sb.Append(filteredWord);
                 sb.Append("*");
             }
 
-            Console.WriteLine("'{0}' -> '{1}'", searchText, sb.ToString());
             return new DbTaskIterator(query, sb.ToString());
         }
 
@@ -128,19 +139,10 @@ namespace Ndexer {
             return result;
         }
 
-        IEnumerator<object> SearchInFiles (string searchText, BlockingQueue<string> filenames, Future completionFuture) {
+        IEnumerator<object> SearchInFiles (SearchQuery search, BlockingQueue<string> filenames, Future completionFuture) {
             var searchedFiles = new List<string>();
             var buffer = new List<SearchResult>();
             var sb = new StringBuilder();
-
-            Regex matcher = null;
-            try {
-                matcher = new Regex(searchText, RegexOptions.Compiled | RegexOptions.ExplicitCapture);
-            } catch {
-                yield break;
-                SetSearchResults(buffer);
-                lblStatus.Text = String.Format("{0} result(s) found.", buffer.Count);
-            }
 
             int numFiles = 0;
 
@@ -155,7 +157,7 @@ namespace Ndexer {
                 if (searchedFiles.Contains(filename))
                     continue;
 
-                if (PendingSearchText != null)
+                if (PendingSearchQuery != null)
                     break;
 
                 searchedFiles.Add(filename);
@@ -191,7 +193,7 @@ namespace Ndexer {
                 var stepSearch = (Action)(() => {
                     string currentLine = lineBuffer[1].Text;
 
-                    if ((currentLine != null) && matcher.IsMatch(currentLine))
+                    if ((currentLine != null) && search.Regex.IsMatch(currentLine))
                         insertResult();
                 });
 
@@ -238,7 +240,7 @@ namespace Ndexer {
             lblStatus.Text = String.Format("{0} result(s) found.", buffer.Count);
         }
 
-        IEnumerator<object> PerformSearch (string searchText) {
+        IEnumerator<object> PerformSearch (SearchQuery search) {
             pbProgress.Style = ProgressBarStyle.Marquee;
             lblStatus.Text = String.Format("Starting search...");
             lbResults.Items.Clear();
@@ -246,43 +248,41 @@ namespace Ndexer {
             var filenames = new BlockingQueue<string>();
             var completionFuture = new Future();
 
-            if ((searchText ?? "").Length > 0) {
-                using (var fileSearch = Program.Scheduler.Start(
-                    SearchInFiles(searchText, filenames, completionFuture),
-                    TaskExecutionPolicy.RunAsBackgroundTask
-                )) {
-                    using (var iterator = BuildQuery(searchText)) {
-                        var f = Program.Scheduler.Start(iterator.Start());
-                        yield return f;
+            using (var fileSearch = Program.Scheduler.Start(
+                SearchInFiles(search, filenames, completionFuture),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            )) {
+                using (var iterator = BuildQuery(search)) {
+                    var f = Program.Scheduler.Start(iterator.Start());
+                    yield return f;
 
-                        if (!f.Failed) {
-                            txtSearch.BackColor = SystemColors.Window;
+                    if (!f.Failed) {
+                        txtSearch.BackColor = SystemColors.Window;
 
-                            while (!iterator.Disposed) {
-                                if (PendingSearchText != null)
-                                    break;
+                        while (!iterator.Disposed) {
+                            if (PendingSearchQuery != null)
+                                break;
 
-                                string filename = iterator.Current.GetString(0);
+                            string filename = iterator.Current.GetString(0);
 
-                                filenames.Enqueue(filename);
+                            filenames.Enqueue(filename);
 
-                                yield return iterator.MoveNext();
-                            }
-                        } else {
-                            txtSearch.BackColor = ErrorColor;
+                            yield return iterator.MoveNext();
                         }
+                    } else {
+                        txtSearch.BackColor = ErrorColor;
                     }
-
-                    completionFuture.Complete();
-
-                    while (filenames.Count < 0)
-                        filenames.Enqueue(null);
-
-                    yield return fileSearch;
                 }
+
+                completionFuture.Complete();
+
+                while (filenames.Count < 0)
+                    filenames.Enqueue(null);
+
+                yield return fileSearch;
             }
 
-            if (PendingSearchText != null) {
+            if (PendingSearchQuery != null) {
                 yield return BeginSearch();
             } else {
                 pbProgress.Value = 0;
@@ -291,18 +291,30 @@ namespace Ndexer {
         }
 
         IEnumerator<object> BeginSearch () {
-            ActiveSearchText = PendingSearchText;
-            PendingSearchText = null;
+            ActiveSearchQuery = PendingSearchQuery;
+            PendingSearchQuery = null;
             ActiveSearch = Program.Scheduler.Start(
-                PerformSearch(ActiveSearchText),
+                PerformSearch(ActiveSearchQuery),
                 TaskExecutionPolicy.RunAsBackgroundTask
             );
             yield break;
         }
 
         IEnumerator<object> QueueNewSearch (string searchText) {
+            if ((searchText ?? "").Trim().Length == 0)
+                yield break;
+
+            SearchQuery search = null;
+            try {
+                search = new SearchQuery(searchText);
+                txtSearch.BackColor = SystemColors.Window;
+            } catch {
+                txtSearch.BackColor = ErrorColor;
+                yield break;
+            }
+
             ActiveQueue = null;
-            PendingSearchText = searchText;
+            PendingSearchQuery = search;
 
             if ((ActiveSearch == null) || (ActiveSearch.Completed)) {
                 yield return BeginSearch();
@@ -356,8 +368,8 @@ namespace Ndexer {
             if ((e.Index < 0) || (e.Index >= SearchResults.Count))
                 return;
 
-            var searchText = ActiveSearchText;
-            if ((searchText == null) || (searchText.Length == 0))
+            var search = ActiveSearchQuery;
+            if (search == null)
                 return;
 
             using (var backgroundBrush = new SolidBrush(selected ? SystemColors.Highlight : lbResults.BackColor))
@@ -379,7 +391,8 @@ namespace Ndexer {
                 e.Graphics.DrawString(item.LineNumber.ToString(), lbResults.Font, brush, rect, format);
 
                 string context = item.Context;
-                string cleanContext = item.Context.Replace(searchText, new string(' ', searchText.Length));
+                MatchEvaluator blankEvaluator = (m) => new String(' ', m.Length);
+                string cleanContext = search.Regex.Replace(item.Context, blankEvaluator);
 
                 format.Trimming = StringTrimming.None;
                 format.Alignment = StringAlignment.Near;
@@ -390,7 +403,7 @@ namespace Ndexer {
 
                 e.Graphics.DrawString(cleanContext, lbResults.Font, brush, rect, format);
 
-                var matches = Regex.Matches(context, searchText);
+                var matches = search.Regex.Matches(context);
                 if (matches.Count > 0) {
                     var ranges = (from m in matches.Cast<Match>() select new CharacterRange(m.Index, m.Length)).ToArray();
                     int blockSize = Math.Min(32, ranges.Length);
