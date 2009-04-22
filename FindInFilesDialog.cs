@@ -219,19 +219,27 @@ namespace Ndexer {
                     }
                 }
 
-                var adapter = new FileDataAdapter(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-                var encoding = DetectEncoding(adapter.BaseStream);
-                using (var reader = new AsyncTextReader(adapter, encoding, SearchBufferSize)) {
-                    while (true) {
-                        f = reader.ReadLine();
-                        yield return f;
+                FileDataAdapter adapter = null;
+                try {
+                    adapter = new FileDataAdapter(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                } catch {
+                    if (adapter != null)
+                        adapter.Dispose();
+                }
+                using (adapter) {
+                    var encoding = DetectEncoding(adapter.BaseStream);
+                    using (var reader = new AsyncTextReader(adapter, encoding, SearchBufferSize)) {
+                        while (true) {
+                            f = reader.ReadLine();
+                            yield return f;
 
-                        lineNumber += 1;
-                        string line = f.Result as string;
-                        insertLine(new LineEntry { Text = line, LineNumber = lineNumber });
+                            lineNumber += 1;
+                            string line = f.Result as string;
+                            insertLine(new LineEntry { Text = line, LineNumber = lineNumber });
 
-                        if (line == null)
-                            break;
+                            if (line == null)
+                                break;
+                        }
                     }
                 }
             }

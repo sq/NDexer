@@ -147,8 +147,10 @@ namespace Ndexer {
 
         public IEnumerator<object> Initialize () {
             yield return Connection.ExecuteSQL("PRAGMA synchronous=0");
-            yield return Connection.ExecuteSQL("PRAGMA auto_vacuum=full");
+            yield return Connection.ExecuteSQL("PRAGMA auto_vacuum=incremental");
             yield return Connection.ExecuteSQL("PRAGMA journal_mode=MEMORY");
+            yield return Connection.ExecuteSQL("PRAGMA read_uncommitted=1");
+            yield return Connection.ExecuteSQL("PRAGMA cache_size=5000");
         }
 
         public IEnumerator<object> Compact () {
@@ -157,6 +159,14 @@ namespace Ndexer {
                 @"SELECT COUNT(*) FROM Tags WHERE " +
                 @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
             );
+
+            long timeStart = Time.Ticks;
+            long timeEnd = timeStart + (Time.SecondInTicks * 3);
+
+            while (Time.Ticks < timeEnd) {
+                yield return Connection.ExecuteSQL("PRAGMA incremental_vacuum(4)");
+                yield return new Sleep(0.1);
+            }
         }
 
         public IEnumerator<object> OpenReadConnection () {

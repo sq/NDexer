@@ -335,7 +335,7 @@ namespace Ndexer {
             return GetProcessOutput(
                 GetCTagsPath(), 
                 "--list-languages"
-            ).ToArray();
+            ).Concat(new string[] { "Text" }).ToArray();
         }
 
         public static Dictionary<string, string> GetLanguageMaps () {
