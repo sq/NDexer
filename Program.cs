@@ -549,10 +549,13 @@ namespace Ndexer {
             modifiers = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
 
             Hotkey_Search_Files = new Hotkey(keyCode, modifiers);
-            Hotkey_Search_Files.Pressed += (s, e) => {
-                Scheduler.Start(ShowFullTextSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
-            };
-            Hotkey_Search_Files.Register(HotkeyWindow);
+            if (!Hotkey_Search_Files.Empty) {
+                Hotkey_Search_Files.Pressed += (s, e) =>
+                {
+                    Scheduler.Start(ShowFullTextSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
+                };
+                Hotkey_Search_Files.Register(HotkeyWindow);
+            }
 
             rtc = new RunToCompletion(Database.GetPreference("Hotkeys.SearchTags.Key"));
             yield return rtc;
@@ -563,10 +566,13 @@ namespace Ndexer {
             modifiers = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
 
             Hotkey_Search_Tags = new Hotkey(keyCode, modifiers);
-            Hotkey_Search_Tags.Pressed += (s, e) => {
-                Scheduler.Start(ShowSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
-            };
-            Hotkey_Search_Tags.Register(HotkeyWindow);
+            if (!Hotkey_Search_Tags.Empty) {
+                Hotkey_Search_Tags.Pressed += (s, e) =>
+                {
+                    Scheduler.Start(ShowSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
+                };
+                Hotkey_Search_Tags.Register(HotkeyWindow);
+            }
         }
 
         public static IEnumerator<object> CommitBatches (BlockingQueue<IEnumerable<string>> batches, Future completion) {

@@ -147,26 +147,27 @@ namespace Ndexer {
 
         public IEnumerator<object> Initialize () {
             yield return Connection.ExecuteSQL("PRAGMA synchronous=0");
-            yield return Connection.ExecuteSQL("PRAGMA auto_vacuum=incremental");
+            yield return Connection.ExecuteSQL("PRAGMA auto_vacuum=none");
             yield return Connection.ExecuteSQL("PRAGMA journal_mode=MEMORY");
             yield return Connection.ExecuteSQL("PRAGMA read_uncommitted=1");
             yield return Connection.ExecuteSQL("PRAGMA cache_size=5000");
         }
 
         public IEnumerator<object> Compact () {
+            long timeStart = Time.Ticks;
+
             yield return Connection.ExecuteSQL(
                 @"DELETE FROM TagContexts WHERE (" +
                 @"SELECT COUNT(*) FROM Tags WHERE " +
                 @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
             );
 
-            long timeStart = Time.Ticks;
-            long timeEnd = timeStart + (Time.SecondInTicks * 3);
+            yield return Connection.ExecuteSQL("VACUUM");
 
-            while (Time.Ticks < timeEnd) {
-                yield return Connection.ExecuteSQL("PRAGMA incremental_vacuum(4)");
-                yield return new Sleep(0.1);
-            }
+            long timeEnd = Time.Ticks;
+            long elapsed = timeEnd - timeStart;
+
+            Console.WriteLine("Database compaction took {0:000.00} second(s).", (double)elapsed / Time.SecondInTicks);
         }
 
         public IEnumerator<object> OpenReadConnection () {
