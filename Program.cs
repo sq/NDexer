@@ -79,10 +79,8 @@ namespace Ndexer {
         }
     }
 
-    public static class Program {
-        public const string RevisionString = "$Rev$";
+    public static partial class Program {
         public const long SchemaVersion = 1;
-        public static int Revision;
 
         public static TaskScheduler Scheduler;
         public static TagDatabase Database;
@@ -115,8 +113,6 @@ namespace Ndexer {
                 );
                 return;
             }
-
-            Revision = int.Parse(System.Text.RegularExpressions.Regex.Match(RevisionString, @"\$Rev\: ([0-9]*)").Groups[1].Value);
 
             DatabasePath = System.IO.Path.GetFullPath(argv[0]);
 

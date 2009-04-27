@@ -139,6 +139,7 @@
     <Compile Include="TagReader.cs" />
     <Compile Include="TextEditors\TextPad.cs" />
     <Compile Include="TextEditors\VisualStudio.cs" />
+    <Compile Include="Version.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="icons\database_monitoring.png" />
