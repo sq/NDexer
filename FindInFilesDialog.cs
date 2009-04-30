@@ -225,6 +225,7 @@ namespace Ndexer {
                 } catch {
                     if (adapter != null)
                         adapter.Dispose();
+                    continue;
                 }
                 using (adapter) {
                     var encoding = DetectEncoding(adapter.BaseStream);
