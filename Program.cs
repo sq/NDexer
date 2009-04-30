@@ -66,7 +66,11 @@ namespace Ndexer {
                     yield return Program.Database.AddTag(tag);
 
                 yield return textReader;
-                string content = textReader.Result as string;
+                string content = "";
+                try {
+                    content = textReader.Result as string;
+                } catch {
+                }
 
                 yield return Program.Database.SetFullTextContentForFile(Filename, content);
 
