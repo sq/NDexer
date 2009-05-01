@@ -414,7 +414,7 @@ namespace Ndexer {
 
         public static IEnumerator<object> AutoShowConfiguration (string[] argv) {
             bool show = false;
-            Future f;
+            IFuture f;
 
             if (argv.Contains("--configure")) {
                 show = true;
@@ -533,10 +533,14 @@ namespace Ndexer {
         }
 
         public static IEnumerator<object> OnConfigurationChanged () {
-            if (Hotkey_Search_Files != null)
-                Hotkey_Search_Files.Unregister();
-            if (Hotkey_Search_Tags != null)
-                Hotkey_Search_Tags.Unregister();
+            if (Hotkey_Search_Files != null) {
+                if (Hotkey_Search_Files.Registered)
+                    Hotkey_Search_Files.Unregister();
+            }
+            if (Hotkey_Search_Tags != null) {
+                if (Hotkey_Search_Tags.Registered)
+                    Hotkey_Search_Tags.Unregister();
+            }
 
             Keys keyCode, modifiers;
 
@@ -607,11 +611,7 @@ namespace Ndexer {
                      Database.UpdateFileListAndGetChangeSet(changeSet),
                      TaskExecutionPolicy.RunAsBackgroundTask
                 );
-                changeGenerator.RegisterOnComplete((f, r, e) => {
-                    changeSet.Enqueue(
-                        new TagDatabase.Change()
-                    );
-                });
+                changeGenerator.RegisterOnComplete((f) => changeSet.Enqueue(new TagDatabase.Change()));
                 
                 int numChanges = 0;
                 int numDeletes = 0;
@@ -619,7 +619,7 @@ namespace Ndexer {
                 while (!changeGenerator.Completed || (changeSet.Count > 0)) {
                     var f = changeSet.Dequeue();
                     yield return f;
-                    var change = (TagDatabase.Change)f.Result;
+                    var change = f.Result;
 
                     if (change.Filename == null)
                         continue;

@@ -116,8 +116,13 @@ namespace Ndexer {
         }
 
         private IEnumerator<object> WriteHotkeyPreference (string hotkeyName, HotkeyControl hotkeyControl) {
-            yield return DB.SetPreference("Hotkeys." + hotkeyName + ".Key", hotkeyControl.Hotkey.ToString());
-            yield return DB.SetPreference("Hotkeys." + hotkeyName + ".Modifiers", hotkeyControl.HotkeyModifiers.ToString());
+            var rtc = new RunToCompletion(DB.SetPreference("Hotkeys." + hotkeyName + ".Key", hotkeyControl.Hotkey.ToString()));
+            yield return rtc;
+            rtc.AssertSucceeded();
+
+            rtc = new RunToCompletion(DB.SetPreference("Hotkeys." + hotkeyName + ".Modifiers", hotkeyControl.HotkeyModifiers.ToString()));
+            yield return rtc;
+            rtc.AssertSucceeded();
         }
 
         private IEnumerator<object> ReadPreferences () {
@@ -131,8 +136,13 @@ namespace Ndexer {
             yield return rtc;
             txtEditorLocation.Text = (rtc.Result as string) ?? @"C:\Program Files\SciTE\SciTE.exe";
 
-            yield return ReadHotkeyPreference("SearchTags", hkSearchTags);
-            yield return ReadHotkeyPreference("SearchFiles", hkSearchFiles);
+            rtc = new RunToCompletion(ReadHotkeyPreference("SearchTags", hkSearchTags));
+            yield return rtc;
+            rtc.AssertSucceeded();
+
+            rtc = new RunToCompletion(ReadHotkeyPreference("SearchFiles", hkSearchFiles));
+            yield return rtc;
+            rtc.AssertSucceeded();
 
             rtc = new RunToCompletion(DB.GetFolderPaths());
             yield return rtc;

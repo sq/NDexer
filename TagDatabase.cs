@@ -426,11 +426,13 @@ namespace Ndexer {
         }
 
         internal IEnumerator<object> MakeSourceFileID (string path, long timestamp) {
-            var f = _MakeSourceFileID.ExecuteNonQuery(path, timestamp);
+            IFuture f = _MakeSourceFileID.ExecuteNonQuery(path, timestamp);
             yield return f;
+            f.AssertSucceeded();
 
             f = _GetSourceFileID.ExecuteScalar(path);
             yield return f;
+            f.AssertSucceeded();
 
             FlushMemoizedIDsForTask("GetSourceFileID", path);
 

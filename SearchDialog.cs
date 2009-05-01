@@ -32,8 +32,8 @@ namespace Ndexer {
         }
 
         ConnectionWrapper Connection = null;
-        Future ActiveSearch = null;
-        Future ActiveQueue = null;
+        IFuture ActiveSearch = null;
+        IFuture ActiveQueue = null;
         string ActiveSearchText = null;
         SearchMode ActiveSearchMode = SearchMode.None;
         string PendingSearchText = null;

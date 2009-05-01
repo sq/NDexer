@@ -53,8 +53,8 @@ namespace Ndexer {
             );
         }
 
-        internal IEnumerator<object> WriteFilenames (IEnumerable<string> filenames, Func<string, Future> writeLine) {
-            Future pendingLine = null;
+        internal IEnumerator<object> WriteFilenames (IEnumerable<string> filenames, Func<string, IFuture> writeLine) {
+            IFuture pendingLine = null;
 
             foreach (string filename in filenames) {
                 if (pendingLine != null)
@@ -81,7 +81,7 @@ namespace Ndexer {
             using (var inputAdapter = new StreamDataAdapter(process.StandardInput, false))
             using (var stdout = new AsyncTextReader(outputAdapter, Encoding.ASCII)) {
 
-                var writeLine = (Func<string, Future>)(
+                var writeLine = (Func<string, IFuture>)(
                     (fn) => {
                         return Future.RunInThread(
                             (Action<string>)(

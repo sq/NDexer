@@ -53,8 +53,8 @@ namespace Ndexer {
         static Color ErrorColor = Color.FromArgb(255, 220, 220);
 
         ConnectionWrapper Connection = null;
-        Future ActiveSearch = null;
-        Future ActiveQueue = null;
+        IFuture ActiveSearch = null;
+        IFuture ActiveQueue = null;
         SearchQuery ActiveSearchQuery = null;
         SearchQuery PendingSearchQuery = null;
         ListViewItem DefaultListItem = new ListViewItem(new string[2]);
