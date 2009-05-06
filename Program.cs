@@ -247,13 +247,13 @@ namespace Ndexer {
 
                 yield return cw.ExecuteSQL("PRAGMA auto_vacuum=none");
 
-                var rtc = new RunToCompletion(GetSchemaVersion(cw));
-                yield return rtc;
-                if (SchemaVersion.CompareTo(rtc.Result) != 0) {
+                Future f;
+                yield return GetSchemaVersion(cw).Run(out f);
+                if (SchemaVersion.CompareTo(f.Result) != 0) {
                     MessageBox.Show(
                         String.Format(
                             @"Data\NDexer.db is version {0}, but your version of NDexer was built against version {1}. This probably means you need to install the latest version from scratch.", 
-                            rtc.Result, SchemaVersion
+                            f.Result, SchemaVersion
                         ),
                         "Error", MessageBoxButtons.OK, MessageBoxIcon.Error
                     );
@@ -378,20 +378,18 @@ namespace Ndexer {
             var dialog = new SearchDialog();
             dialog.Show();
 
-            var rtc = new RunToCompletion(Database.OpenReadConnection());
-            yield return rtc;
-            var conn = (ConnectionWrapper)rtc.Result;
-            dialog.SetConnection(conn);
+            Future<ConnectionWrapper> f;
+            yield return Database.OpenReadConnection().Run(out f);
+            dialog.SetConnection(f.Result);
         }
 
         public static IEnumerator<object> ShowFullTextSearchTask () {
             var dialog = new FindInFilesDialog();
             dialog.Show();
 
-            var rtc = new RunToCompletion(Database.OpenReadConnection());
-            yield return rtc;
-            var conn = (ConnectionWrapper)rtc.Result;
-            dialog.SetConnection(conn);
+            Future<ConnectionWrapper> f;
+            yield return Database.OpenReadConnection().Run(out f);
+            dialog.SetConnection(f.Result);
         }
 
         private static IEnumerator<object> TeardownTask () {
@@ -453,9 +451,9 @@ namespace Ndexer {
         public static IEnumerator<object> MainTask (string[] argv) {
             yield return Database.Initialize();
 
-            var rtc = new RunToCompletion(GetSchemaVersion(Database.Connection));
-            yield return rtc;
-            if (SchemaVersion.CompareTo(rtc.Result) != 0) {
+            Future f;
+            yield return GetSchemaVersion(Database.Connection).Run(out f); 
+            if (SchemaVersion.CompareTo(f.Result) != 0) {
                 yield return RebuildIndexTask();
                 yield break;
             }
@@ -543,14 +541,13 @@ namespace Ndexer {
             }
 
             Keys keyCode, modifiers;
+            Future<string> f;
 
-            var rtc = new RunToCompletion(Database.GetPreference("Hotkeys.SearchFiles.Key"));
-            yield return rtc;
-            keyCode = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+            yield return Database.GetPreference("Hotkeys.SearchFiles.Key").Run(out f);
+            keyCode = (Keys)Enum.Parse(typeof(Keys), f.Result ?? "None", true);
 
-            rtc = new RunToCompletion(Database.GetPreference("Hotkeys.SearchFiles.Modifiers"));
-            yield return rtc;
-            modifiers = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+            yield return Database.GetPreference("Hotkeys.SearchFiles.Modifiers").Run(out f);
+            modifiers = (Keys)Enum.Parse(typeof(Keys), f.Result ?? "None", true);
 
             Hotkey_Search_Files = new Hotkey(keyCode, modifiers);
             if (!Hotkey_Search_Files.Empty) {
@@ -561,13 +558,11 @@ namespace Ndexer {
                 Hotkey_Search_Files.Register(HotkeyWindow);
             }
 
-            rtc = new RunToCompletion(Database.GetPreference("Hotkeys.SearchTags.Key"));
-            yield return rtc;
-            keyCode = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+            yield return Database.GetPreference("Hotkeys.SearchTags.Key").Run(out f);
+            keyCode = (Keys)Enum.Parse(typeof(Keys), f.Result?? "None", true);
 
-            rtc = new RunToCompletion(Database.GetPreference("Hotkeys.SearchTags.Modifiers"));
-            yield return rtc;
-            modifiers = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+            yield return Database.GetPreference("Hotkeys.SearchTags.Modifiers").Run(out f);
+            modifiers = (Keys)Enum.Parse(typeof(Keys), f.Result ?? "None", true);
 
             Hotkey_Search_Tags = new Hotkey(keyCode, modifiers);
             if (!Hotkey_Search_Tags.Empty) {
@@ -730,13 +725,13 @@ namespace Ndexer {
                 TaskExecutionPolicy.RunAsBackgroundTask
             );
 
-            var rtc = new RunToCompletion(Database.GetFilterPatterns());
-            yield return rtc;
-            var filters = (string[])rtc.Result;
+            Future<string[]> f;
 
-            rtc = new RunToCompletion(Database.GetFolderPaths());
-            yield return rtc;
-            var folders = (string[])rtc.Result;
+            yield return Database.GetFilterPatterns().Run(out f);
+            var filters = f.Result;
+
+            yield return Database.GetFolderPaths().Run(out f);
+            var folders = f.Result;
 
             DiskMonitor monitor = new DiskMonitor(
                 folders,

@@ -106,48 +106,42 @@ namespace Ndexer {
         }
 
         private IEnumerator<object> ReadHotkeyPreference (string hotkeyName, HotkeyControl hotkeyControl) {
-            var rtc = new RunToCompletion(DB.GetPreference("Hotkeys." + hotkeyName + ".Key"));
-            yield return rtc;
-            hotkeyControl.Hotkey = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+            Future<string> f;
+            yield return DB.GetPreference("Hotkeys." + hotkeyName + ".Key").Run(out f);
+            hotkeyControl.Hotkey = (Keys)Enum.Parse(typeof(Keys), f.Result ?? "None", true);
 
-            rtc = new RunToCompletion(DB.GetPreference("Hotkeys." + hotkeyName + ".Modifiers"));
-            yield return rtc;
-            hotkeyControl.HotkeyModifiers = (Keys)Enum.Parse(typeof(Keys), rtc.Result as string ?? "None", true);
+            yield return DB.GetPreference("Hotkeys." + hotkeyName + ".Modifiers").Run(out f);
+            hotkeyControl.HotkeyModifiers = (Keys)Enum.Parse(typeof(Keys), f.Result ?? "None", true);
         }
 
         private IEnumerator<object> WriteHotkeyPreference (string hotkeyName, HotkeyControl hotkeyControl) {
-            var rtc = new RunToCompletion(DB.SetPreference("Hotkeys." + hotkeyName + ".Key", hotkeyControl.Hotkey.ToString()));
-            yield return rtc;
-            rtc.AssertSucceeded();
+            yield return DB.SetPreference("Hotkeys." + hotkeyName + ".Key", hotkeyControl.Hotkey.ToString());
 
-            rtc = new RunToCompletion(DB.SetPreference("Hotkeys." + hotkeyName + ".Modifiers", hotkeyControl.HotkeyModifiers.ToString()));
-            yield return rtc;
-            rtc.AssertSucceeded();
+            yield return DB.SetPreference("Hotkeys." + hotkeyName + ".Modifiers", hotkeyControl.HotkeyModifiers.ToString());
         }
 
         private IEnumerator<object> ReadPreferences () {
             txtIndexLocation.Text = Program.DatabasePath;
 
-            var rtc = new RunToCompletion(DB.GetPreference("TextEditor.Name"));
-            yield return rtc;
-            cbTextEditor.Text = (rtc.Result as string) ?? "SciTE";
+            {
+                Future<string> f;
+                yield return DB.GetPreference("TextEditor.Name").Run(out f);
+                cbTextEditor.Text = f.Result ?? "SciTE";
 
-            rtc = new RunToCompletion(DB.GetPreference("TextEditor.Location"));
-            yield return rtc;
-            txtEditorLocation.Text = (rtc.Result as string) ?? @"C:\Program Files\SciTE\SciTE.exe";
+                yield return DB.GetPreference("TextEditor.Location").Run(out f);
+                txtEditorLocation.Text = f.Result ?? @"C:\Program Files\SciTE\SciTE.exe";
+            }
 
-            rtc = new RunToCompletion(ReadHotkeyPreference("SearchTags", hkSearchTags));
-            yield return rtc;
-            rtc.AssertSucceeded();
+            yield return ReadHotkeyPreference("SearchTags", hkSearchTags);
 
-            rtc = new RunToCompletion(ReadHotkeyPreference("SearchFiles", hkSearchFiles));
-            yield return rtc;
-            rtc.AssertSucceeded();
+            yield return ReadHotkeyPreference("SearchFiles", hkSearchFiles);
 
-            rtc = new RunToCompletion(DB.GetFolderPaths());
-            yield return rtc;
-            Folders.AddRange(rtc.Result as string[]);
-            RefreshFolderList();
+            {
+                Future<string[]> f;
+                yield return DB.GetFolderPaths().Run(out f);
+                Folders.AddRange(f.Result);
+                RefreshFolderList();
+            }
 
             var iter = new TaskIterator<TagDatabase.Filter>(DB.GetFilters());
             yield return iter.Start();
@@ -218,15 +212,10 @@ namespace Ndexer {
             this.Enabled = false;
             this.UseWaitCursor = true;
 
-            var rtc = new RunToCompletion(
-                WritePreferences(), 
-                TaskExecutionPolicy.RunAsBackgroundTask
-            );
-            yield return rtc;
+            Future<bool> f;
+            yield return WritePreferences().Run(out f);
 
-            bool result = (bool)rtc.Result;
-
-            if (result) {
+            if (f.Result) {
                 this.DialogResult = DialogResult.OK;
 
                 this.Hide();

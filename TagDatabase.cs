@@ -192,10 +192,10 @@ namespace Ndexer {
         public IEnumerator<object> GetFilters () {
             var filter = new Filter();
 
-            var rtc = new RunToCompletion(OpenReadConnection());
-            yield return rtc;
+            Future<ConnectionWrapper> f;
+            yield return OpenReadConnection().Run(out f);
 
-            using (var conn = (ConnectionWrapper)rtc.Result)
+            using (var conn = f.Result)
             using (var query = conn.BuildQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters"))
             using (var iter = new DbTaskIterator(query)) {
                 yield return iter.Start();
@@ -216,10 +216,10 @@ namespace Ndexer {
         public IEnumerator<object> GetFolders () {
             var folder = new Folder();
 
-            var rtc = new RunToCompletion(OpenReadConnection());
-            yield return rtc;
+            Future<ConnectionWrapper> f;
+            yield return OpenReadConnection().Run(out f);
 
-            using (var conn = (ConnectionWrapper)rtc.Result)
+            using (var conn = f.Result)
             using (var query = conn.BuildQuery(@"SELECT Folders_ID, Folders_Path FROM Folders"))
             using (var iter = new DbTaskIterator(query)) {
                 yield return iter.Start();
@@ -239,10 +239,10 @@ namespace Ndexer {
         public IEnumerator<object> GetSourceFiles () {
             var sf = new SourceFile();
 
-            var rtc = new RunToCompletion(OpenReadConnection());
-            yield return rtc;
+            Future<ConnectionWrapper> f;
+            yield return OpenReadConnection().Run(out f);
 
-            using (var conn = (ConnectionWrapper)rtc.Result)
+            using (var conn = f.Result)
             using (var query = conn.BuildQuery(@"SELECT SourceFiles_ID, SourceFiles_Path, SourceFiles_Timestamp FROM SourceFiles"))
             using (var iter = new DbTaskIterator(query)) {
                 yield return iter.Start();
@@ -339,13 +339,17 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> UpdateFileListAndGetChangeSet (BlockingQueue<Change> changeSet) {
-            var rtc = new RunToCompletion(GetFilterPatterns());
-            yield return rtc;
-            var filters = String.Join(";", (string[])rtc.Result);
+            string filters;
+            string[] folders;
 
-            rtc = new RunToCompletion(GetFolderPaths());
-            yield return rtc;
-            var folders = (string[])rtc.Result;
+            {
+                Future<string[]> f;
+                yield return GetFilterPatterns().Run(out f);
+                filters = String.Join(";", f.Result);
+
+                yield return GetFolderPaths().Run(out f);
+                folders = f.Result;
+            }
 
             using (var iterator = new TaskIterator<SourceFile>(GetSourceFiles())) {
                 yield return iterator.Start();
@@ -389,10 +393,10 @@ namespace Ndexer {
                     long newTimestamp = entry.LastWritten;
                     long oldTimestamp = 0;
 
-                    rtc = new RunToCompletion(GetSourceFileTimestamp(entry.Name));
-                    yield return rtc;
-                    if (rtc.Result is long)
-                        oldTimestamp = (long)rtc.Result;
+                    Future f;
+                    yield return GetSourceFileTimestamp(entry.Name).Run(out f);
+                    if (f.Result is long)
+                        oldTimestamp = (long)f.Result;
 
                     if (newTimestamp > oldTimestamp)
                         changeSet.Enqueue(
@@ -413,26 +417,23 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> GetSourceFileID (string path) {
-            var f = _GetSourceFileID.ExecuteScalar(path);
+            Future<object> f = _GetSourceFileID.ExecuteScalar(path);
             yield return f;
 
             if (f.Result is long) {
                 yield return new Result(f.Result);
             } else {
-                var rtc = new RunToCompletion(MakeSourceFileID(path, 0));
-                yield return rtc;
-                yield return new Result(rtc.Result);
+                yield return MakeSourceFileID(path, 0).Run(out f);
+                yield return new Result(f.Result);
             }
         }
 
         internal IEnumerator<object> MakeSourceFileID (string path, long timestamp) {
             IFuture f = _MakeSourceFileID.ExecuteNonQuery(path, timestamp);
             yield return f;
-            f.AssertSucceeded();
 
             f = _GetSourceFileID.ExecuteScalar(path);
             yield return f;
-            f.AssertSucceeded();
 
             FlushMemoizedIDsForTask("GetSourceFileID", path);
 
@@ -534,22 +535,22 @@ namespace Ndexer {
             object result = null;
             if (resultCache.TryGetValue(argument, out result)) {
                 _MemoizationHits += 1;
-                yield return new Result(result);
             } else {
                 _MemoizationMisses += 1;
-                var rtc = new RunToCompletion(task(argument));
-                yield return rtc;
-                result = rtc.Result;
+                Future f;
+                yield return task(argument).Run(out f);
+                result = f.Result;
 
                 resultCache[argument] = result;
-                yield return new Result(result);
             }
+
+            yield return new Result(result);
         }
 
         public IEnumerator<object> SetFullTextContentForFile (string filename, string content) {
-            var rtc = new RunToCompletion(MemoizedGetID("GetSourceFileID", filename));
-            yield return rtc;
-            var sourceFileID = (Int64)(rtc.Result);
+            Future<Int64> f;
+            yield return MemoizedGetID("GetSourceFileID", filename).Run(out f);
+            var sourceFileID = f.Result;
 
             yield return _SetFullTextContentForFile.ExecuteNonQuery(
                 sourceFileID, content
@@ -557,23 +558,20 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> AddTag (Tag tag) {
-            var rtc = new RunToCompletion(MemoizedGetID("GetSourceFileID", tag.SourceFile));
-            yield return rtc;
-            var sourceFileID = (Int64)(rtc.Result);
+            Future<object> f;
+            yield return MemoizedGetID("GetSourceFileID", tag.SourceFile).Run(out f);
+            var sourceFileID = (Int64)(f.Result);
 
-            rtc = new RunToCompletion(MemoizedGetID("GetKindID", tag.Kind));
-            yield return rtc;
-            var kindID = Convert.ToInt64(rtc.Result);
+            yield return MemoizedGetID("GetKindID", tag.Kind).Run(out f);
+            var kindID = Convert.ToInt64(f.Result);
 
-            rtc = new RunToCompletion(MemoizedGetID("GetContextID", tag.Context));
-            yield return rtc;
-            var contextID = Convert.ToInt64(rtc.Result);
+            yield return MemoizedGetID("GetContextID", tag.Context).Run(out f);
+            var contextID = Convert.ToInt64(f.Result);
 
-            rtc = new RunToCompletion(MemoizedGetID("GetLanguageID", tag.Language));
-            yield return rtc;
-            var languageID = Convert.ToInt64(rtc.Result);
+            yield return MemoizedGetID("GetLanguageID", tag.Language).Run(out f);
+            var languageID = Convert.ToInt64(f.Result);
 
-            var f = _InsertTag.ExecuteScalar(
+            f = _InsertTag.ExecuteScalar(
                 tag.Name, sourceFileID, tag.LineNumber,
                 kindID, contextID, languageID
             );
