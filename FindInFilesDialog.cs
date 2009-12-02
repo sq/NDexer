@@ -174,8 +174,8 @@ namespace Ndexer {
                     for (int i = 0; i < 3; i++) {
                         if (lineBuffer[i].Text != null) {
                             var line = lineBuffer[i].Text;
-                            if (line.Length > 1024)
-                                line = line.Substring(0, 1024);
+                            if (line.Length > 512)
+                                line = line.Substring(0, 512);
                             sb.Append(line);
                         }
 
@@ -228,8 +228,12 @@ namespace Ndexer {
                     continue;
                 }
                 using (adapter) {
-                    var encoding = DetectEncoding(adapter.BaseStream);
-                    using (var reader = new AsyncTextReader(adapter, encoding, SearchBufferSize)) {
+                    var fEncoding = Future.RunInThread(
+                        () => DetectEncoding(adapter.BaseStream)
+                    );
+                    yield return fEncoding;
+
+                    using (var reader = new AsyncTextReader(adapter, fEncoding.Result, SearchBufferSize)) {
                         while (true) {
                             f = reader.ReadLine();
                             yield return f;
@@ -240,6 +244,14 @@ namespace Ndexer {
 
                             if (line == null)
                                 break;
+                            if (PendingSearchQuery != null)
+                                break;
+
+                            if (lineNumber % 10000 == 5000) {
+                                var newStatus = String.Format("Scanning '{0}'... (line {1})", filename, lineNumber);
+                                if (lblStatus.Text != newStatus)
+                                    lblStatus.Text = newStatus;
+                            }
                         }
                     }
                 }
@@ -411,6 +423,13 @@ namespace Ndexer {
                     e.Graphics.DrawLine(pen, rect.Location, new PointF(rect.Right, rect.Top));
 
                 e.Graphics.DrawString(cleanContext, lbResults.Font, brush, rect, format);
+
+                using (var maskBrush = new SolidBrush(Color.FromArgb(127, selected ? SystemColors.Highlight : lbResults.BackColor))) {
+                    var mrect = new RectangleF(e.Bounds.X + 6, e.Bounds.Y + LineHeight + 1, e.Bounds.Width - 6, LineHeight);
+                    e.Graphics.FillRectangle(maskBrush, mrect);
+                    mrect = new RectangleF(e.Bounds.X + 6, e.Bounds.Y + (LineHeight * 3) + 1, e.Bounds.Width - 6, LineHeight);
+                    e.Graphics.FillRectangle(maskBrush, mrect);
+                }
 
                 var matches = search.Regex.Matches(context);
                 if (matches.Count > 0) {
