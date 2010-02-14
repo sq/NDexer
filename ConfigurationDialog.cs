@@ -143,17 +143,18 @@ namespace Ndexer {
                 RefreshFolderList();
             }
 
-            var iter = new TaskIterator<TagDatabase.Filter>(DB.GetFilters());
-            yield return iter.Start();
+            using (var iter = new TaskEnumerator<TagDatabase.Filter>(DB.GetFilters()))
             while (!iter.Disposed) {
-                var filter = iter.Current;
-                if (!FileTypes.ContainsKey(filter.Language))
-                    FileTypes[filter.Language] = new List<string>();
+                yield return iter.Fetch();
 
-                FileTypes[filter.Language].Add(filter.Pattern);
+                foreach (var filter in iter) {
+                    if (!FileTypes.ContainsKey(filter.Language))
+                        FileTypes[filter.Language] = new List<string>();
 
-                yield return iter.MoveNext();
+                    FileTypes[filter.Language].Add(filter.Pattern);
+                }
             }
+
             RefreshFileTypeList();
         }
 

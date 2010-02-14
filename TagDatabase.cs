@@ -197,18 +197,15 @@ namespace Ndexer {
 
             using (var conn = f.Result)
             using (var query = conn.BuildQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters"))
-            using (var iter = new DbTaskIterator(query)) {
-                yield return iter.Start();
+            using (var iter = query.Execute())
+            while (!iter.Disposed) {
+                yield return iter.Fetch();
 
-                while (!iter.Disposed) {
-                    var item = iter.Current;
-
+                foreach (var item in iter) {
                     filter.ID = item.GetInt64(0);
                     filter.Pattern = item.GetString(1);
                     filter.Language = item.GetString(2);
                     yield return new NextValue(filter);
-
-                    yield return iter.MoveNext();
                 }
             }
         }
@@ -221,17 +218,14 @@ namespace Ndexer {
 
             using (var conn = f.Result)
             using (var query = conn.BuildQuery(@"SELECT Folders_ID, Folders_Path FROM Folders"))
-            using (var iter = new DbTaskIterator(query)) {
-                yield return iter.Start();
+            using (var iter = query.Execute())
+            while (!iter.Disposed) {
+                yield return iter.Fetch();
 
-                while (!iter.Disposed) {
-                    var item = iter.Current;
-
+                foreach (var item in iter) {
                     folder.ID = item.GetInt64(0);
                     folder.Path = item.GetString(1);
                     yield return new NextValue(folder);
-
-                    yield return iter.MoveNext();
                 }
             }
         }
@@ -244,18 +238,15 @@ namespace Ndexer {
 
             using (var conn = f.Result)
             using (var query = conn.BuildQuery(@"SELECT SourceFiles_ID, SourceFiles_Path, SourceFiles_Timestamp FROM SourceFiles"))
-            using (var iter = new DbTaskIterator(query)) {
-                yield return iter.Start();
+            using (var iter = query.Execute())
+            while (!iter.Disposed) {
+                yield return iter.Fetch();
 
-                while (!iter.Disposed) {
-                    var item = iter.Current;
-
+                foreach (var item in iter) {
                     sf.ID = item.GetInt64(0);
                     sf.Path = item.GetString(1);
                     sf.Timestamp = item.GetInt64(2);
                     yield return new NextValue(sf);
-
-                    yield return iter.MoveNext();
                 }
             }
         }
@@ -315,9 +306,8 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> GetFilterPatterns () {
-            var iter = new TaskIterator<Filter>(GetFilters());
-            yield return iter.Start();
-            var f = iter.ToArray();
+            var iter = new TaskEnumerator<Filter>(GetFilters());
+            var f = Scheduler.Start(iter.GetArray());
 
             yield return f;
 
@@ -327,9 +317,8 @@ namespace Ndexer {
         }
 
         public IEnumerator<object> GetFolderPaths () {
-            var iter = new TaskIterator<Folder>(GetFolders());
-            yield return iter.Start();
-            var f = iter.ToArray();
+            var iter = new TaskEnumerator<Folder>(GetFolders());
+            var f = Scheduler.Start(iter.GetArray());
 
             yield return f;
 
@@ -351,12 +340,11 @@ namespace Ndexer {
                 folders = f.Result;
             }
 
-            using (var iterator = new TaskIterator<SourceFile>(GetSourceFiles())) {
-                yield return iterator.Start();
+            using (var iterator = new TaskEnumerator<SourceFile>(GetSourceFiles()))
+            while (!iterator.Disposed) {
+                yield return iterator.Fetch();
 
-                while (!iterator.Disposed) {
-                    var file = iterator.Current;
-
+                foreach (var file in iterator) {
                     bool validFolder = false;
                     bool fileExists = false;
 
@@ -374,8 +362,6 @@ namespace Ndexer {
                         changeSet.Enqueue(
                             new Change { Filename = file.Path, Deleted = true }
                         );
-
-                    yield return iterator.MoveNext();
                 }
             }
 
@@ -384,26 +370,24 @@ namespace Ndexer {
                     folder, filters, true, Squared.Util.IO.IsFile
                 );
 
-                var dirEntries = enumerator.GetTaskIterator();
-                yield return dirEntries.Start();
-
+                using (var dirEntries = TaskEnumerator<IO.DirectoryEntry>.FromEnumerable(enumerator))
                 while (!dirEntries.Disposed) {
-                    var entry = dirEntries.Current;
+                    yield return dirEntries.Fetch();
 
-                    long newTimestamp = entry.LastWritten;
-                    long oldTimestamp = 0;
+                    foreach (var entry in dirEntries) {
+                        long newTimestamp = entry.LastWritten;
+                        long oldTimestamp = 0;
 
-                    Future f;
-                    yield return GetSourceFileTimestamp(entry.Name).Run(out f);
-                    if (f.Result is long)
-                        oldTimestamp = (long)f.Result;
+                        Future f;
+                        yield return GetSourceFileTimestamp(entry.Name).Run(out f);
+                        if (f.Result is long)
+                            oldTimestamp = (long)f.Result;
 
-                    if (newTimestamp > oldTimestamp)
-                        changeSet.Enqueue(
-                            new Change { Filename = entry.Name, Deleted = false }
-                        );
-
-                    yield return dirEntries.MoveNext();
+                        if (newTimestamp > oldTimestamp)
+                            changeSet.Enqueue(
+                                new Change { Filename = entry.Name, Deleted = false }
+                            );
+                    }
                 }
             }
 

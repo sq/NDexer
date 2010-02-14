@@ -109,7 +109,7 @@ namespace Ndexer {
             return new string(chars);
         }
 
-        private DbTaskIterator BuildQuery(SearchQuery search) {
+        private TaskEnumerator<IDataRecord> BuildQuery(SearchQuery search) {
             var query = Connection.BuildQuery(
                 @"SELECT SourceFiles_Path FROM FullText, SourceFiles WHERE " +
                 @"FullText.FileText MATCH ? AND " +
@@ -127,7 +127,7 @@ namespace Ndexer {
                 sb.Append("*");
             }
 
-            return new DbTaskIterator(query, sb.ToString());
+            return query.Execute(sb.ToString());
         }
 
         Encoding DetectEncoding (System.IO.Stream stream) {
@@ -186,7 +186,7 @@ namespace Ndexer {
 
                     buffer.Add(item);
 
-                    if ((buffer.Count % 100 == 0) || ((buffer.Count < 20) && (buffer.Count % 5 == 1)))
+                    if ((buffer.Count % 250 == 0) || ((buffer.Count < 50) && (buffer.Count % 5 == 1)))
                         SetSearchResults(buffer);
                 });
 
@@ -206,7 +206,7 @@ namespace Ndexer {
                 });
 
                 numFiles += 1;
-                if (numFiles % 20 == 0) {
+                if (numFiles % 50 == 0) {
                     lblStatus.Text = String.Format("Scanning '{0}'...", filename);
                     if (completionFuture.Completed) {
                         int totalNumFiles = numFiles + filenames.Count;
@@ -274,7 +274,7 @@ namespace Ndexer {
                 TaskExecutionPolicy.RunAsBackgroundTask
             )) {
                 using (var iterator = BuildQuery(search)) {
-                    var f = Program.Scheduler.Start(iterator.Start());
+                    var f = Program.Scheduler.Start(iterator.Fetch());
                     yield return f;
 
                     if (!f.Failed) {
@@ -284,11 +284,10 @@ namespace Ndexer {
                             if (PendingSearchQuery != null)
                                 break;
 
-                            string filename = iterator.Current.GetString(0);
+                            foreach (var current in iterator)
+                                filenames.Enqueue(current.GetString(0));
 
-                            filenames.Enqueue(filename);
-
-                            yield return iterator.MoveNext();
+                            yield return iterator.Fetch();
                         }
                     } else {
                         txtSearch.BackColor = ErrorColor;

@@ -266,45 +266,39 @@ namespace Ndexer {
                 var trans = cw.CreateTransaction();
                 yield return trans;
 
-                using (var iter = new TaskIterator<TagDatabase.Folder>(Database.GetFolders())) {
-                    yield return iter.Start();
+                using (var iter = new TaskEnumerator<TagDatabase.Folder>(Database.GetFolders()))
+                while (!iter.Disposed) {
+                    yield return iter.Fetch();
 
-                    while (!iter.Disposed) {
+                    foreach (var item in iter)
                         yield return cw.ExecuteSQL(
                             "INSERT INTO Folders (Folders_Path) VALUES (?)",
-                            iter.Current.Path
+                            item.Path
                         );
-
-                        yield return iter.MoveNext();
-                    }
                 }
 
-                using (var iter = new TaskIterator<TagDatabase.Filter>(Database.GetFilters())) {
-                    yield return iter.Start();
+                using (var iter = new TaskEnumerator<TagDatabase.Filter>(Database.GetFilters()))
+                while (!iter.Disposed) {
+                    yield return iter.Fetch();
 
-                    while (!iter.Disposed) {
+                    foreach (var item in iter)
                         yield return cw.ExecuteSQL(
                             "INSERT INTO Filters (Filters_Pattern, Filters_Language) VALUES (?, ?)",
-                            iter.Current.Pattern, iter.Current.Language
+                            item.Pattern, item.Language
                         );
-
-                        yield return iter.MoveNext();
-                    }
                 }
 
-                using (var iter = new DbTaskIterator(
-                    Database.Connection.BuildQuery("SELECT Preferences_Name, Preferences_Value FROM Preferences")
-                )) {
-                    yield return iter.Start();
+                using (var iter = Database.Connection.BuildQuery(
+                    "SELECT Preferences_Name, Preferences_Value FROM Preferences"
+                ).Execute())
+                while (!iter.Disposed) {
+                    yield return iter.Fetch();
 
-                    while (!iter.Disposed) {
+                    foreach (var item in iter)
                         yield return cw.ExecuteSQL(
                             "INSERT INTO Preferences (Preferences_Name, Preferences_Value) VALUES (?, ?)",
-                            iter.Current.GetValue(0), iter.Current.GetValue(1)
+                            item.GetValue(0), item.GetValue(1)
                         );
-
-                        yield return iter.MoveNext();
-                    }
                 }
 
                 yield return trans.Commit();
@@ -418,9 +412,8 @@ namespace Ndexer {
                 show = true;
             } else {
                 {
-                    var iter = new TaskIterator<TagDatabase.Folder>(Database.GetFolders());
-                    yield return iter.Start();
-                    f = iter.ToArray();
+                    var iter = new TaskEnumerator<TagDatabase.Folder>(Database.GetFolders());
+                    f = Scheduler.Start(iter.GetArray());
                 }
 
                 yield return f;
@@ -429,9 +422,8 @@ namespace Ndexer {
                     show = true;
                 } else {
                     {
-                        var iter = new TaskIterator<TagDatabase.Filter>(Database.GetFilters());
-                        yield return iter.Start();
-                        f = iter.ToArray();
+                        var iter = new TaskEnumerator<TagDatabase.Filter>(Database.GetFilters());
+                        f = Scheduler.Start(iter.GetArray());
                     }
 
                     yield return f;
@@ -462,18 +454,17 @@ namespace Ndexer {
 
             {
                 var buffer = new StringBuilder();
-                var iter = new TaskIterator<TagDatabase.Filter>(Database.GetFilters());
-                yield return iter.Start();
+                var iter = new TaskEnumerator<TagDatabase.Filter>(Database.GetFilters());
                 while (!iter.Disposed) {
-                    var filter = iter.Current;
+                    yield return iter.Fetch();
 
-                    if (buffer.Length > 0)
-                        buffer.Append(",");
-                    buffer.Append(filter.Language);
-                    buffer.Append(":+");
-                    buffer.Append(filter.Pattern.Replace("*", "").Replace("?", ""));
-
-                    yield return iter.MoveNext();
+                    foreach (var filter in iter) {
+                        if (buffer.Length > 0)
+                            buffer.Append(",");
+                        buffer.Append(filter.Language);
+                        buffer.Append(":+");
+                        buffer.Append(filter.Pattern.Replace("*", "").Replace("?", ""));
+                    }
                 }
                 LanguageMap = buffer.ToString();
             }
@@ -681,19 +672,16 @@ namespace Ndexer {
                 LanguageMap
             );
 
-            var tagIterator = new TaskIterator<TagGroup>(
+            var tagIterator = new TaskEnumerator<TagGroup>(
                 gen.GenerateTags(filenames)
             );
 
-            using (new ActiveWorker("Updating index")) {
-                yield return tagIterator.Start();
+            using (new ActiveWorker("Updating index"))
+            while (!tagIterator.Disposed) {
+                yield return tagIterator.Fetch();
 
-                while (!tagIterator.Disposed) {
-                    var group = tagIterator.Current;
+                foreach (var group in tagIterator)
                     yield return group.Commit();
-
-                    yield return tagIterator.MoveNext();
-                }
             }
         }
 

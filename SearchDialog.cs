@@ -123,7 +123,7 @@ namespace Ndexer {
             lvResults_SizeChanged(null, EventArgs.Empty);
         }
 
-        private DbTaskIterator BuildQuery (SearchMode searchMode, string searchText) {
+        private TaskEnumerator<IDataRecord> BuildQuery (SearchMode searchMode, string searchText) {
             switch (searchMode) {
                 case SearchMode.FindTags: {
                         var query = Connection.BuildQuery(
@@ -135,7 +135,7 @@ namespace Ndexer {
                             @"FROM Tags_And_SourceFiles WHERE " +
                             @"Tags_Name GLOB ?"
                         );
-                        return new DbTaskIterator(query, searchText, searchText + "?*");
+                        return query.Execute(searchText, searchText + "?*");
                     }
                 case SearchMode.FindFiles: {
                         var query = Connection.BuildQuery(
@@ -147,7 +147,7 @@ namespace Ndexer {
                             @"FROM SourceFiles WHERE " +
                             @"SourceFiles_Path GLOB ?"
                         );
-                        return new DbTaskIterator(query, @"*\" + searchText, @"*\" + searchText + "?*");
+                        return query.Execute(@"*\" + searchText, @"*\" + searchText + "?*");
                     }
                 case SearchMode.TagsInFile: {
                         var query = Connection.BuildQuery(
@@ -155,7 +155,7 @@ namespace Ndexer {
                             @"FROM Tags_And_SourceFiles WHERE " +
                             @"SourceFiles_Path GLOB ? "
                         );
-                        return new DbTaskIterator(query, @"*\" + searchText);
+                        return query.Execute(@"*\" + searchText);
                     }
                 case SearchMode.TagsInContext: {
                         var query = Connection.BuildQuery(
@@ -163,7 +163,7 @@ namespace Ndexer {
                             @"FROM Tags_And_SourceFiles JOIN TagContexts USING (TagContexts_ID) WHERE " +
                             @"TagContexts_Text = ?"
                         );
-                        return new DbTaskIterator(query, searchText);
+                        return query.Execute(searchText);
                     }
             }
 
@@ -182,24 +182,25 @@ namespace Ndexer {
             SetSearchResults(searchMode, buffer);
 
             if (searchText.Length > 0) {
-                using (var iterator = BuildQuery(searchMode, searchText)) {
-                    yield return iterator.Start();
+                using (var iterator = BuildQuery(searchMode, searchText))
+                while (!iterator.Disposed) {
+                    if (PendingSearchText != null)
+                        break;
 
-                    while (!iterator.Disposed) {
-                        if (PendingSearchText != null)
-                            break;
+                    yield return iterator.Fetch();
 
+                    foreach (var current in iterator) {
                         switch (searchMode) {
                             case SearchMode.FindFiles:
-                                item.Filename = iterator.Current.GetString(0);
-                                break;
+                                item.Filename = current.GetString(0);
+                            break;
                             case SearchMode.FindTags:
                             case SearchMode.TagsInFile:
                             case SearchMode.TagsInContext:
-                                item.Name = iterator.Current.GetString(0);
-                                item.Filename = iterator.Current.GetString(1);
-                                item.LineNumber = iterator.Current.GetInt64(2);
-                                break;
+                                item.Name = current.GetString(0);
+                                item.Filename = current.GetString(1);
+                                item.LineNumber = current.GetInt64(2);
+                            break;
                         }
 
                         buffer.Add(item);
@@ -208,8 +209,6 @@ namespace Ndexer {
                             lblStatus.Text = String.Format("{0} result(s) found so far...", buffer.Count);
                             SetSearchResults(searchMode, buffer);
                         }
-
-                        yield return iterator.MoveNext();
                     }
                 }
             }
