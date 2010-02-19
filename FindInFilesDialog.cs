@@ -12,9 +12,19 @@ using Squared.Task.Data;
 using System.Text.RegularExpressions;
 using Squared.Task.IO;
 using System.Reflection;
+using Squared.Task.Data.Mapper;
 
 namespace Ndexer {
     public partial class FindInFilesDialog : Form {
+        [Mapper(Explicit=true)]
+        class FtsResult {
+            [Column("SourceFiles_Path")]
+            public string Path {
+                get;
+                set;
+            }
+        }
+
         public class SearchQuery {
             public readonly string Text;
             public readonly Regex Regex;
@@ -109,7 +119,7 @@ namespace Ndexer {
             return new string(chars);
         }
 
-        private TaskEnumerator<IDataRecord> BuildQuery(SearchQuery search) {
+        private TaskEnumerator<FtsResult> BuildQuery (SearchQuery search) {
             var query = Connection.BuildQuery(
                 @"SELECT SourceFiles_Path FROM FullText, SourceFiles WHERE " +
                 @"FullText.FileText MATCH ? AND " +
@@ -127,7 +137,7 @@ namespace Ndexer {
                 sb.Append("*");
             }
 
-            return query.Execute(sb.ToString());
+            return query.Execute<FtsResult>(sb.ToString());
         }
 
         Encoding DetectEncoding (System.IO.Stream stream) {
@@ -285,7 +295,7 @@ namespace Ndexer {
                                 break;
 
                             foreach (var current in iterator)
-                                filenames.Enqueue(current.GetString(0));
+                                filenames.Enqueue(current.Path);
 
                             yield return iterator.Fetch();
                         }
