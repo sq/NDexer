@@ -30,9 +30,9 @@ namespace Ndexer {
             public readonly Regex Regex;
             public readonly string[] SearchWords;
 
-            public SearchQuery(string regex) {
+            public SearchQuery(string regex, RegexOptions options) {
                 Text = regex;
-                Regex = new Regex(regex, RegexOptions.Compiled | RegexOptions.ExplicitCapture);
+                Regex = new Regex(regex, RegexOptions.Compiled | RegexOptions.ExplicitCapture | options);
 
                 // Ph'nglui Mglw'nafh Regex R'lyeh wgah'nagl fhtagn
                 var tempRe = new Regex(regex, RegexOptions.ExplicitCapture);
@@ -156,6 +156,12 @@ namespace Ndexer {
 
             int numFiles = 0;
 
+            using (Finally.Do(() => {
+                SetSearchResults(buffer);
+                lblStatus.Text = String.Format("{0} result(s) found.", buffer.Count);
+                pbProgress.Style = ProgressBarStyle.Continuous;
+                pbProgress.Value = 0;
+            }))
             while (filenames.Count > 0 || !completionFuture.Completed) {
                 var f = filenames.Dequeue();
                 yield return f;
@@ -243,32 +249,37 @@ namespace Ndexer {
                     );
                     yield return fEncoding;
 
-                    using (var reader = new AsyncTextReader(adapter, fEncoding.Result, SearchBufferSize)) {
-                        while (true) {
-                            f = reader.ReadLine();
-                            yield return f;
+                    Future<string> thisLine = null, nextLine = null;
 
-                            lineNumber += 1;
-                            string line = f.Result as string;
-                            insertLine(new LineEntry { Text = line, LineNumber = lineNumber });
+                    using (var reader = new AsyncTextReader(adapter, fEncoding.Result, SearchBufferSize))
+                    while (true) {
+                        thisLine = nextLine;
 
-                            if (line == null)
-                                break;
-                            if (PendingSearchQuery != null)
-                                break;
+                        if (thisLine != null)
+                            yield return thisLine;
 
-                            if (lineNumber % 10000 == 5000) {
-                                var newStatus = String.Format("Scanning '{0}'... (line {1})", filename, lineNumber);
-                                if (lblStatus.Text != newStatus)
-                                    lblStatus.Text = newStatus;
-                            }
+                        nextLine = reader.ReadLine();
+
+                        if (thisLine == null)
+                            continue;
+
+                        lineNumber += 1;
+                        string line = thisLine.Result;
+                        insertLine(new LineEntry { Text = line, LineNumber = lineNumber });
+
+                        if (line == null)
+                            break;
+                        if (PendingSearchQuery != null)
+                            break;
+
+                        if (lineNumber % 10000 == 5000) {
+                            var newStatus = String.Format("Scanning '{0}'... (line {1})", filename, lineNumber);
+                            if (lblStatus.Text != newStatus)
+                                lblStatus.Text = newStatus;
                         }
                     }
                 }
             }
-
-            SetSearchResults(buffer);
-            lblStatus.Text = String.Format("{0} result(s) found.", buffer.Count);
         }
 
         IEnumerator<object> PerformSearch (SearchQuery search) {
@@ -334,9 +345,22 @@ namespace Ndexer {
             if ((searchText ?? "").Trim().Length == 0)
                 yield break;
 
+            RegexOptions regexOptions = RegexOptions.None;
+
+            if (btnEnableRegex.Checked == false) {
+                searchText = Regex.Escape(searchText);
+                regexOptions |= RegexOptions.CultureInvariant;
+            }
+
+            if (btnCaseSensitive.Checked == false) {
+                searchText = searchText.ToLower();
+                regexOptions |= RegexOptions.IgnoreCase;
+                regexOptions |= RegexOptions.CultureInvariant;
+            }
+
             SearchQuery search = null;
             try {
-                search = new SearchQuery(searchText);
+                search = new SearchQuery(searchText, regexOptions);
                 txtSearch.BackColor = SystemColors.Window;
             } catch {
                 txtSearch.BackColor = ErrorColor;
@@ -351,7 +375,8 @@ namespace Ndexer {
             }
         }
 
-        private void txtFilter_TextChanged (object sender, EventArgs e) {
+        private void txtSearch_TextChanged (object sender, EventArgs e) {
+            btnClearSearchField.Visible = (txtSearch.Text.Length > 0);
             SearchParametersChanged();
         }
 
@@ -487,6 +512,61 @@ namespace Ndexer {
         private void lbResults_MouseDoubleClick (object sender, MouseEventArgs e) {
             int index = lbResults.IndexFromPoint(e.X, e.Y);
             OpenItem(index);
+        }
+
+        private void btnClearSearchField_Click (object sender, EventArgs e) {
+            txtSearch.Text = "";
+            if (ActiveSearch != null)
+                ActiveSearch.Dispose();
+            ActiveSearch = null;
+            ActiveSearchQuery = PendingSearchQuery = null;
+        }
+
+        private void btnCaseSensitive_Click (object sender, EventArgs e) {
+            SearchParametersChanged();
+        }
+
+        private void btnEnableRegex_Click (object sender, EventArgs e) {
+            SearchParametersChanged();
+        }
+
+        private void mnuCopyFilenames_Click (object sender, EventArgs e) {
+            var sr = SearchResults;
+            var hs = new HashSet<string>();
+            var sb = new StringBuilder();
+
+            foreach (var r in sr) {
+                if (hs.Add(r.Filename))
+                    sb.AppendLine(r.Filename);
+            }
+
+            Clipboard.Clear();
+            Clipboard.SetText(sb.ToString());
+        }
+
+        private void mnuCopyFilenamesAndLineNumbers_Click (object sender, EventArgs e) {
+            var sr = SearchResults;
+            var sb = new StringBuilder();
+
+            foreach (var r in sr)
+                sb.AppendFormat("{0}\t{1}\r\n", r.Filename, r.LineNumber);
+
+            Clipboard.Clear();
+            Clipboard.SetText(sb.ToString());
+        }
+
+        private void mnuCopyFiles_Click (object sender, EventArgs e) {
+            var sr = SearchResults;
+            var hs = new HashSet<string>();
+            var sc = new System.Collections.Specialized.StringCollection();
+
+            foreach (var r in sr) {
+                if (hs.Add(r.Filename))
+                    sc.Add(r.Filename);
+            }
+
+            Clipboard.Clear();
+            Clipboard.SetFileDropList(sc);
         }
     }
 }
