@@ -110,15 +110,29 @@ namespace Ndexer {
             Application.SetCompatibleTextRenderingDefault(false);
 
             if (argv.Length < 1) {
-                MessageBox.Show(
-                    "NDexer cannot start without a path specified for the index database on the command line.\n" +
-                    @"For example: ndexer.exe C:\mysource\index.db",
-                    "NDexer Error"
-                );
-                return;
-            }
+                using (var dlg = new SaveFileDialog()) {
+                    dlg.Title = "Select Index Database";
+                    dlg.Filter = "Index Databases (*.db)|*.db";
+                    dlg.CheckFileExists = false;
+                    dlg.CheckPathExists = true;
+                    dlg.AddExtension = true;
+                    dlg.AutoUpgradeEnabled = true;
+                    dlg.OverwritePrompt = false;
 
-            DatabasePath = System.IO.Path.GetFullPath(argv[0]);
+                    if (dlg.ShowDialog() != DialogResult.OK) {
+                        MessageBox.Show(
+                            "NDexer cannot start without a path specified for the index database on the command line.\n" +
+                            @"For example: ndexer.exe C:\mysource\index.db",
+                            "NDexer Error"
+                        );
+                        return;
+                    } else {
+                        DatabasePath = dlg.FileName;
+                    }
+                }
+            } else {
+                DatabasePath = System.IO.Path.GetFullPath(argv[0]);
+            }
 
             if (!System.IO.File.Exists(DatabasePath)) {
                 System.IO.File.Copy(GetDataPath() + @"\ndexer.db", DatabasePath);
@@ -506,7 +520,10 @@ namespace Ndexer {
                     theIcon = Icon_Monitoring;
                 }
 
-                TrayCaption = String.Format("NDexer r{2} ({0}){1}", System.IO.Path.GetFileName(DatabasePath), statusMessage, Revision);
+                var dbName = Path.GetDirectoryName(DatabasePath);
+                dbName = Path.Combine(dbName.Substring(dbName.LastIndexOf('\\') + 1), Path.GetFileNameWithoutExtension(DatabasePath));
+
+                TrayCaption = String.Format("NDexer r{2} ({0}){1}", dbName, statusMessage, Revision);
                 if (TrayCaption.Length >= 64)
                     TrayCaption = TrayCaption.Substring(0, 60) + "...";
 
@@ -725,7 +742,9 @@ namespace Ndexer {
                 folders,
                 filters,
                 new string[] {
-                    System.Text.RegularExpressions.Regex.Escape(@"\.svn\")
+                    System.Text.RegularExpressions.Regex.Escape(@"\.svn\"),
+                    System.Text.RegularExpressions.Regex.Escape(@"\.git\"),
+                    System.Text.RegularExpressions.Regex.Escape(@"\.hg\")
                 }
             );
             monitor.Monitoring = true;
