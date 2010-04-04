@@ -73,7 +73,7 @@ namespace Ndexer {
         float LineNumberWidth;
         float LineHeight;
 
-        public const int SearchBufferSize = 8192;
+        public const int SearchBufferSize = 1024 * 64;
 
         public FindInFilesDialog () {
             InitializeComponent();
