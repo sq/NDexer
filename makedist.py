@@ -60,10 +60,11 @@ def getSvnVersion(failIfModified=False):
     
     version = result[0].strip()
     if version[-1] == 'M':
-        if failIfModified:
-            raise Exception("Working copy has local modifications")
-        else:
-            version = version[:-1]
+        raise Exception("Working copy has local modifications")
+    elif (':' in version) or ('-' in version):
+        raise Exception("Working copy is not at a single revision")
+    else:
+        version = version[:-1]
     
     return int(version)
 
@@ -87,18 +88,11 @@ def main():
     shutil.rmtree(r"dist\temp", True)
     
     os.makedirs(r"dist\temp")
-    os.makedirs(r"dist\temp\data")
-    os.makedirs(r"dist\temp\ctags")
     
     shutil.copy(r"bin\debug\ndexer.exe", r"dist\temp")
     
     for fn in glob(r"bin\debug\*.dll"):
         shutil.copy(fn, r"dist\temp")
-    
-    for fn in glob(r"data\*.*"):
-        shutil.copy(fn, r"dist\temp\data")
-    
-    shutil.copy(r"ctags\ctags.exe", r"dist\temp\ctags")
     
     print "-- Compressing package --"
     try:
