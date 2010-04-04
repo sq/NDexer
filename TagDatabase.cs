@@ -13,7 +13,6 @@ namespace Ndexer {
         public struct Filter {
             public long ID;
             public string Pattern;
-            public string Language;
         }
 
         public struct Change {
@@ -33,22 +32,14 @@ namespace Ndexer {
         }
 
         private Query
-            _GetContextID,
-            _GetKindID,
-            _GetLanguageID,
             _GetSourceFileID,
             _GetSourceFileTimestamp,
             _GetPreference,
             _SetPreference,
-            _MakeContextID,
-            _MakeKindID,
-            _MakeLanguageID,
             _MakeSourceFileID,
-            _DeleteTagsForFile,
             _DeleteSourceFile,
-            _DeleteSourceFilesAndTagsForFolder,
+            _DeleteSourceFilesForFolder,
             _LastInsertID,
-            _InsertTag,
             _SetFullTextContentForFile;
 
         private const int MemoizationLRUSize = 128;
@@ -74,9 +65,6 @@ namespace Ndexer {
             CompileQueries();
 
             _TaskMap["GetSourceFileID"] = GetSourceFileID;
-            _TaskMap["GetKindID"] = GetKindID;
-            _TaskMap["GetLanguageID"] = GetLanguageID;
-            _TaskMap["GetContextID"] = GetContextID;
 
 #if DEBUG
             scheduler.Start(
@@ -100,44 +88,18 @@ namespace Ndexer {
         }
 
         private void CompileQueries () {
-            _GetContextID = Connection.BuildQuery(@"SELECT TagContexts_ID FROM TagContexts WHERE TagContexts_Text = ?");
-            _GetKindID = Connection.BuildQuery(@"SELECT TagKinds_ID FROM TagKinds WHERE TagKinds_Name = ?");
-            _GetLanguageID = Connection.BuildQuery(@"SELECT TagLanguages_ID FROM TagLanguages WHERE TagLanguages_Name = ?");
             _GetSourceFileID = Connection.BuildQuery(@"SELECT SourceFiles_ID FROM SourceFiles WHERE SourceFiles_Path = ?");
             _GetSourceFileTimestamp = Connection.BuildQuery(@"SELECT SourceFiles_Timestamp FROM SourceFiles WHERE SourceFiles_Path = ?");
             _GetPreference = Connection.BuildQuery(@"SELECT Preferences_Value FROM Preferences WHERE Preferences_Name = ?");
             _SetPreference = Connection.BuildQuery(@"INSERT OR REPLACE INTO Preferences (Preferences_Name, Preferences_Value) VALUES (?, ?)");
             _LastInsertID = Connection.BuildQuery(@"SELECT last_insert_rowid()");
-            _MakeContextID = Connection.BuildQuery(
-                @"INSERT OR REPLACE INTO TagContexts (TagContexts_Text) VALUES (?)"
-            );
-            _MakeKindID = Connection.BuildQuery(
-                @"INSERT OR REPLACE INTO TagKinds (TagKinds_Name) VALUES (?)"
-            );
-            _MakeLanguageID = Connection.BuildQuery(
-                @"INSERT OR REPLACE INTO TagLanguages (TagLanguages_Name) VALUES (?)"
-            );
             _MakeSourceFileID = Connection.BuildQuery(
                 @"INSERT OR REPLACE INTO SourceFiles (SourceFiles_Path, SourceFiles_Timestamp) VALUES (?, ?)"
             );
-            _DeleteTagsForFile = Connection.BuildQuery(@"DELETE FROM Tags WHERE SourceFiles_ID = ?");
             _DeleteSourceFile = Connection.BuildQuery(
-                @"DELETE FROM Tags WHERE SourceFiles_ID = @p0;" +
                 @"DELETE FROM SourceFiles WHERE SourceFiles_ID = @p0");
-            _DeleteSourceFilesAndTagsForFolder = Connection.BuildQuery(
-                @"DELETE FROM Tags WHERE " +
-                @"Tags.SourceFiles_ID IN ( " +
-                @"SELECT SourceFiles_ID FROM SourceFiles WHERE " +
-                @"SourceFiles.SourceFiles_Path LIKE @p0 );" +
+            _DeleteSourceFilesForFolder = Connection.BuildQuery(
                 @"DELETE FROM SourceFiles WHERE SourceFiles_Path LIKE @p0"
-            );
-            _InsertTag = Connection.BuildQuery(
-                @"INSERT INTO Tags (" +
-                @"Tags_Name, SourceFiles_ID, Tags_LineNumber, TagKinds_ID, TagContexts_ID, TagLanguages_ID" +
-                @") VALUES (" +
-                @"?, ?, ?, ?, ?, ?" +
-                @");" +
-                @"SELECT last_insert_rowid()"
             );
             _SetFullTextContentForFile = Connection.BuildQuery(
                 @"INSERT OR REPLACE INTO FullText (SourceFiles_ID, FileText) VALUES (@p0, @p1);" + 
@@ -155,12 +117,6 @@ namespace Ndexer {
 
         public IEnumerator<object> Compact () {
             long timeStart = Time.Ticks;
-
-            yield return Connection.ExecuteSQL(
-                @"DELETE FROM TagContexts WHERE (" +
-                @"SELECT COUNT(*) FROM Tags WHERE " +
-                @"TagContexts.TagContexts_ID = Tags.TagContexts_ID ) < 1"
-            );
 
             yield return Connection.ExecuteSQL("VACUUM");
 
@@ -196,7 +152,7 @@ namespace Ndexer {
             yield return OpenReadConnection().Run(out f);
 
             using (var conn = f.Result)
-            using (var query = conn.BuildQuery(@"SELECT Filters_ID, Filters_Pattern, Filters_Language FROM Filters"))
+            using (var query = conn.BuildQuery(@"SELECT Filters_ID, Filters_Pattern FROM Filters"))
             using (var iter = query.Execute())
             while (!iter.Disposed) {
                 yield return iter.Fetch();
@@ -204,7 +160,6 @@ namespace Ndexer {
                 foreach (var item in iter) {
                     filter.ID = item.GetInt64(0);
                     filter.Pattern = item.GetString(1);
-                    filter.Language = item.GetString(2);
                     yield return new NextValue(filter);
                 }
             }
@@ -280,14 +235,6 @@ namespace Ndexer {
                 yield return _DeleteSourceFile.ExecuteNonQuery(f.Result);
         }
 
-        public IEnumerator<object> DeleteTagsForFile (string filename) {
-            var f = _GetSourceFileID.ExecuteScalar(filename);
-            yield return f;
-
-            if (f.Result is long)
-                yield return _DeleteTagsForFile.ExecuteNonQuery(f.Result);
-        }
-
         public IEnumerator<object> DeleteSourceFileOrFolder (string filename) {
             FlushMemoizedIDs();
 
@@ -301,7 +248,7 @@ namespace Ndexer {
                     filename += "\\";
                 filename += "%";
 
-                yield return _DeleteSourceFilesAndTagsForFolder.ExecuteNonQuery(filename);
+                yield return _DeleteSourceFilesForFolder.ExecuteNonQuery(filename);
             }
         }
 
@@ -424,66 +371,6 @@ namespace Ndexer {
             yield return new Result(f.Result);
         }
 
-        public IEnumerator<object> GetKindID (string kind) {
-            if (kind == null)
-                yield return new Result(0);
-
-            var f = _GetKindID.ExecuteScalar(kind);
-            yield return f;
-
-            if (f.Result is long) {
-                yield return new Result(f.Result);
-            } else {
-                f = _MakeKindID.ExecuteScalar(kind);
-                yield return f;
-
-                f = _GetKindID.ExecuteScalar(kind);
-                yield return f;
-
-                yield return new Result(f.Result);
-            }
-        }
-
-        public IEnumerator<object> GetContextID (string context) {
-            if (context == null)
-                yield return new Result(0);
-
-            var f = _GetContextID.ExecuteScalar(context);
-            yield return f;
-
-            if (f.Result is long) {
-                yield return new Result(f.Result);
-            } else {
-                f = _MakeContextID.ExecuteScalar(context);
-                yield return f;
-
-                f = _GetContextID.ExecuteScalar(context);
-                yield return f;
-
-                yield return new Result(f.Result);
-            }
-        }
-
-        public IEnumerator<object> GetLanguageID (string language) {
-            if (language == null)
-                yield return new Result(0);
-
-            var f = _GetLanguageID.ExecuteScalar(language);
-            yield return f;
-
-            if (f.Result is long) {
-                yield return new Result(f.Result);
-            } else {
-                f = _MakeLanguageID.ExecuteScalar(language);
-                yield return f;
-
-                f = _GetLanguageID.ExecuteScalar(language);
-                yield return f;
-
-                yield return new Result(f.Result);
-            }
-        }
-
         public void FlushMemoizedIDsForTask (string taskName, string argument) {
             if (argument == null) {
                 if (_MemoizationCache.ContainsKey(taskName))
@@ -539,32 +426,6 @@ namespace Ndexer {
             yield return _SetFullTextContentForFile.ExecuteNonQuery(
                 sourceFileID, content
             );
-        }
-
-        public IEnumerator<object> AddTag (Tag tag) {
-            Future<object> f;
-            yield return MemoizedGetID("GetSourceFileID", tag.SourceFile).Run(out f);
-            var sourceFileID = (Int64)(f.Result);
-
-            yield return MemoizedGetID("GetKindID", tag.Kind).Run(out f);
-            var kindID = Convert.ToInt64(f.Result);
-
-            yield return MemoizedGetID("GetContextID", tag.Context).Run(out f);
-            var contextID = Convert.ToInt64(f.Result);
-
-            yield return MemoizedGetID("GetLanguageID", tag.Language).Run(out f);
-            var languageID = Convert.ToInt64(f.Result);
-
-            f = _InsertTag.ExecuteScalar(
-                tag.Name, sourceFileID, tag.LineNumber,
-                kindID, contextID, languageID
-            );
-            yield return f;
-            yield return new Result(f.Result);
-        }
-
-        public IEnumerator<object> Clear () {
-            yield return Connection.ExecuteSQL("DELETE FROM Tags");
         }
 
         public IEnumerator<object> Dispose () {

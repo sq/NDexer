@@ -19,7 +19,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.30729</ProductVersion>
+    <ProductVersion>9.0.21022</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{536F4E2B-A2C2-4E49-83A3-7CD5137B552E}</ProjectGuid>
     <OutputType>WinExe</OutputType>
@@ -98,17 +98,9 @@
     <Compile Include="SearchResultListBox.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="SearchResultListView.cs">
-      <SubType>Component</SubType>
-    </Compile>
     <Compile Include="TextEditors\Director.cs" />
+    <Compile Include="TextEditors\NotepadPlusPlus.cs" />
     <Compile Include="TextEditors\SciTE.cs" />
-    <Compile Include="SearchDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="SearchDialog.Designer.cs">
-      <DependentUpon>SearchDialog.cs</DependentUpon>
-    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="ConfigurationDialog.resx">
@@ -123,17 +115,9 @@
       <DependentUpon>FindInFilesDialog.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
-    <EmbeddedResource Include="SearchResultListView.resx">
-      <DependentUpon>SearchResultListView.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="SearchDialog.resx">
-      <DependentUpon>SearchDialog.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <Compile Include="Properties\Resources.Designer.cs">
@@ -151,8 +135,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="TagDatabase.cs" />
-    <Compile Include="TagGenerator.cs" />
-    <Compile Include="TagReader.cs" />
     <Compile Include="TextEditors\TextPad.cs" />
     <Compile Include="TextEditors\VisualStudio.cs" />
     <Compile Include="Version.cs" />
@@ -165,6 +147,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="icons\database_working_2.png" />
+    <EmbeddedResource Include="schema.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="ext\squared.tasklib\Squared.Task.csproj">

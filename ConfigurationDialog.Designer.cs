@@ -47,8 +47,6 @@
             this.gbHotkeys = new System.Windows.Forms.GroupBox();
             this.lblSearchFiles = new System.Windows.Forms.Label();
             this.hkSearchFiles = new exscape.HotkeyControl();
-            this.lblSearchTags = new System.Windows.Forms.Label();
-            this.hkSearchTags = new exscape.HotkeyControl();
             this.gbEditor = new System.Windows.Forms.GroupBox();
             this.cmdBrowseForEditor = new System.Windows.Forms.Button();
             this.txtEditorLocation = new System.Windows.Forms.TextBox();
@@ -196,7 +194,7 @@
             this.lvFileTypes.SmallImageList = this.ilFileTypes;
             this.lvFileTypes.TabIndex = 0;
             this.lvFileTypes.UseCompatibleStateImageBehavior = false;
-            this.lvFileTypes.View = System.Windows.Forms.View.Details;
+            this.lvFileTypes.View = System.Windows.Forms.View.List;
             this.lvFileTypes.SelectedIndexChanged += new System.EventHandler(this.lvFileTypes_SelectedIndexChanged);
             // 
             // colFilter
@@ -283,11 +281,9 @@
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.gbHotkeys.Controls.Add(this.lblSearchFiles);
             this.gbHotkeys.Controls.Add(this.hkSearchFiles);
-            this.gbHotkeys.Controls.Add(this.lblSearchTags);
-            this.gbHotkeys.Controls.Add(this.hkSearchTags);
             this.gbHotkeys.Location = new System.Drawing.Point(3, 87);
             this.gbHotkeys.Name = "gbHotkeys";
-            this.gbHotkeys.Size = new System.Drawing.Size(374, 70);
+            this.gbHotkeys.Size = new System.Drawing.Size(374, 46);
             this.gbHotkeys.TabIndex = 6;
             this.gbHotkeys.TabStop = false;
             this.gbHotkeys.Text = "Hotkeys";
@@ -295,11 +291,11 @@
             // lblSearchFiles
             // 
             this.lblSearchFiles.AutoSize = true;
-            this.lblSearchFiles.Location = new System.Drawing.Point(9, 47);
+            this.lblSearchFiles.Location = new System.Drawing.Point(9, 22);
             this.lblSearchFiles.Name = "lblSearchFiles";
-            this.lblSearchFiles.Size = new System.Drawing.Size(68, 13);
+            this.lblSearchFiles.Size = new System.Drawing.Size(44, 13);
             this.lblSearchFiles.TabIndex = 11;
-            this.lblSearchFiles.Text = "Search Files:";
+            this.lblSearchFiles.Text = "Search:";
             // 
             // hkSearchFiles
             // 
@@ -307,32 +303,11 @@
                         | System.Windows.Forms.AnchorStyles.Right)));
             this.hkSearchFiles.Hotkey = System.Windows.Forms.Keys.None;
             this.hkSearchFiles.HotkeyModifiers = System.Windows.Forms.Keys.None;
-            this.hkSearchFiles.Location = new System.Drawing.Point(86, 44);
+            this.hkSearchFiles.Location = new System.Drawing.Point(86, 19);
             this.hkSearchFiles.Name = "hkSearchFiles";
             this.hkSearchFiles.Size = new System.Drawing.Size(282, 20);
             this.hkSearchFiles.TabIndex = 10;
             this.hkSearchFiles.Text = "None";
-            // 
-            // lblSearchTags
-            // 
-            this.lblSearchTags.AutoSize = true;
-            this.lblSearchTags.Location = new System.Drawing.Point(9, 21);
-            this.lblSearchTags.Name = "lblSearchTags";
-            this.lblSearchTags.Size = new System.Drawing.Size(71, 13);
-            this.lblSearchTags.TabIndex = 9;
-            this.lblSearchTags.Text = "Search Tags:";
-            // 
-            // hkSearchTags
-            // 
-            this.hkSearchTags.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.hkSearchTags.Hotkey = System.Windows.Forms.Keys.None;
-            this.hkSearchTags.HotkeyModifiers = System.Windows.Forms.Keys.None;
-            this.hkSearchTags.Location = new System.Drawing.Point(86, 18);
-            this.hkSearchTags.Name = "hkSearchTags";
-            this.hkSearchTags.Size = new System.Drawing.Size(282, 20);
-            this.hkSearchTags.TabIndex = 8;
-            this.hkSearchTags.Text = "None";
             // 
             // gbEditor
             // 
@@ -450,7 +425,5 @@
         private System.Windows.Forms.GroupBox gbHotkeys;
         private System.Windows.Forms.Label lblSearchFiles;
         private exscape.HotkeyControl hkSearchFiles;
-        private System.Windows.Forms.Label lblSearchTags;
-        private exscape.HotkeyControl hkSearchTags;
     }
 }

@@ -105,6 +105,7 @@ namespace Ndexer {
             this.lbResults.TabIndex = 1;
             this.lbResults.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.lbResults_MouseDoubleClick);
             this.lbResults.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.lbResults_DrawItem);
+            this.lbResults.KeyDown += new System.Windows.Forms.KeyEventHandler(this.lbResults_KeyDown);
             // 
             // cmResults
             // 
@@ -113,7 +114,7 @@ namespace Ndexer {
             this.mnuCopyFilenamesAndLineNumbers,
             this.mnuCopyFiles});
             this.cmResults.Name = "cmResults";
-            this.cmResults.Size = new System.Drawing.Size(259, 92);
+            this.cmResults.Size = new System.Drawing.Size(259, 70);
             // 
             // mnuCopyFilenames
             // 

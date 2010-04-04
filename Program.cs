@@ -15,6 +15,7 @@ using Squared.Task.IO;
 using System.Reflection;
 using System.Text;
 using MovablePython;
+using System.Text.RegularExpressions;
 
 namespace Ndexer {
     public class ActiveWorker : IDisposable {
@@ -40,11 +41,11 @@ namespace Ndexer {
         }
     }
 
-    public class TagGroup : List<Tag> {
+    public class FileIndexEntry {
         public string Filename;
         public long Timestamp;
 
-        public TagGroup (string filename, long timestamp)
+        public FileIndexEntry (string filename, long timestamp)
             : base() {
             Filename = filename;
             Timestamp = timestamp;
@@ -58,12 +59,7 @@ namespace Ndexer {
             using (var transaction = Program.Database.Connection.CreateTransaction()) {
                 yield return transaction;
 
-                yield return Program.Database.DeleteTagsForFile(Filename);
-
                 yield return Program.Database.MakeSourceFileID(Filename, Timestamp);
-
-                foreach (var tag in this)
-                    yield return Program.Database.AddTag(tag);
 
                 yield return textReader;
                 string content = "";
@@ -79,20 +75,18 @@ namespace Ndexer {
         }
 
         public override string ToString () {
-            return String.Format("TagGroup(fn={0}, ts={1}) {2} item(s)", Filename, Timestamp, Count);
+            return String.Format("FileIndexEntry(fn={0}, ts={1})", Filename, Timestamp);
         }
     }
 
     public static partial class Program {
-        public const long SchemaVersion = 1;
-
         public static TaskScheduler Scheduler;
         public static TagDatabase Database;
         public static List<ActiveWorker> ActiveWorkers = new List<ActiveWorker>();
         public static NotifyIcon NotifyIcon;
         public static Icon Icon_Monitoring;
         public static Icon Icon_Working_1, Icon_Working_2;
-        public static Hotkey Hotkey_Search_Tags, Hotkey_Search_Files;
+        public static Hotkey Hotkey_Search_Files;
         public static NativeWindow HotkeyWindow;
         public static ContextMenuStrip ContextMenu;
         public static string TrayCaption;
@@ -166,13 +160,7 @@ namespace Ndexer {
 
             ContextMenu = new ContextMenuStrip();
             ContextMenu.Items.Add(
-                "Search &Tags", null,
-                (e, s) => {
-                    Scheduler.Start(ShowSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
-                }
-            );
-            ContextMenu.Items.Add(
-                "Search &Files", null,
+                "&Search", null,
                 (e, s) => {
                     Scheduler.Start(ShowFullTextSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
                 }
@@ -203,7 +191,7 @@ namespace Ndexer {
             NotifyIcon = new NotifyIcon();
             NotifyIcon.ContextMenuStrip = ContextMenu;
             NotifyIcon.DoubleClick += (EventHandler)((s, e) => {
-                Scheduler.Start(ShowSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
+                Scheduler.Start(ShowFullTextSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
             });
 
             Scheduler.Start(
@@ -225,10 +213,6 @@ namespace Ndexer {
             return executablePath;
         }
 
-        public static string GetCTagsPath() {
-            return GetExecutablePath() + @"\ctags\ctags.exe";
-        }
-
         public static string GetDataPath () {
             return GetExecutablePath() + @"\data\";
         }
@@ -243,39 +227,40 @@ namespace Ndexer {
             }
         }
 
-        public static IEnumerator<object> GetSchemaVersion (ConnectionWrapper cw) {
+        public static IEnumerator<object> GetDBSchemaVersion (ConnectionWrapper cw) {
             using (var q = cw.BuildQuery("PRAGMA user_version")) {
                 var f = q.ExecuteScalar();
                 yield return f;
-                yield return new Result((long)f.Result);
+                yield return new Result(f.Result);
             }
+        }
+
+        public static string GetEmbeddedSchema () {
+            string schemaText;
+
+            using (var stream = Assembly.GetEntryAssembly().GetManifestResourceStream("Ndexer.schema.sql"))
+            using (var reader = new StreamReader(stream))
+                schemaText = reader.ReadToEnd();
+
+            return schemaText;
+        }
+
+        public static long GetEmbeddedSchemaVersion () {
+            var schema = GetEmbeddedSchema();
+            return long.Parse(Regex.Match(schema, "PRAGMA user_version=(?'version'[0-9]*);", RegexOptions.ExplicitCapture).Groups["version"].Value);
         }
 
         public static IEnumerator<object> RebuildIndexTask () {
             using (new ActiveWorker("Rebuilding index...")) {
-                System.IO.File.Copy(GetDataPath() + @"\ndexer.db", DatabasePath + "_new");
-
                 var conn = new SQLiteConnection(String.Format("Data Source={0}", DatabasePath + "_new"));
                 conn.Open();
                 var cw = new ConnectionWrapper(Scheduler, conn);
 
                 yield return cw.ExecuteSQL("PRAGMA auto_vacuum=none");
 
-                Future f;
-                yield return GetSchemaVersion(cw).Run(out f);
-                if (SchemaVersion.CompareTo(f.Result) != 0) {
-                    MessageBox.Show(
-                        String.Format(
-                            @"Data\NDexer.db is version {0}, but your version of NDexer was built against version {1}. This probably means you need to install the latest version from scratch.", 
-                            f.Result, SchemaVersion
-                        ),
-                        "Error", MessageBoxButtons.OK, MessageBoxIcon.Error
-                    );
+                long schemaVersion = GetEmbeddedSchemaVersion();
 
-                    yield return ExitTask();
-
-                    yield break;
-                }
+                cw.ExecuteSQL(GetEmbeddedSchema());
 
                 var trans = cw.CreateTransaction();
                 yield return trans;
@@ -297,8 +282,8 @@ namespace Ndexer {
 
                     foreach (var item in iter)
                         yield return cw.ExecuteSQL(
-                            "INSERT INTO Filters (Filters_Pattern, Filters_Language) VALUES (?, ?)",
-                            item.Pattern, item.Language
+                            "INSERT INTO Filters (Filters_Pattern) VALUES (?)",
+                            item.Pattern
                         );
                 }
 
@@ -339,28 +324,6 @@ namespace Ndexer {
             }
         }
 
-        public static string[] GetLanguageNames () {
-            return GetProcessOutput(
-                GetCTagsPath(), 
-                "--list-languages"
-            ).Concat(new string[] { "Text" }).ToArray();
-        }
-
-        public static Dictionary<string, string> GetLanguageMaps () {
-            var result = new Dictionary<string, string>();
-
-            foreach (string line in GetProcessOutput(
-                GetCTagsPath(),
-                "--list-maps"
-            )) {
-                string[] parts = line.Split(new char[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 2)
-                    result.Add(parts[0], parts[1]);
-            }
-
-            return result;
-        }
-
         public static string[] GetDirectorNames () {
             var results = new List<string>();
             var types = Assembly.GetExecutingAssembly().GetTypes();
@@ -380,15 +343,6 @@ namespace Ndexer {
             var constructor = directorType.GetConstructor(new Type[] { typeof(string) });
             var director = (IBasicDirector)constructor.Invoke(new object[] { editorPath });
             return director;
-        }
-
-        public static IEnumerator<object> ShowSearchTask () {
-            var dialog = new SearchDialog();
-            dialog.Show();
-
-            Future<ConnectionWrapper> f;
-            yield return Database.OpenReadConnection().Run(out f);
-            dialog.SetConnection(f.Result);
         }
 
         public static IEnumerator<object> ShowFullTextSearchTask () {
@@ -457,31 +411,16 @@ namespace Ndexer {
         public static IEnumerator<object> MainTask (string[] argv) {
             yield return Database.Initialize();
 
+            var schemaVersion = GetEmbeddedSchemaVersion();
+
             Future f;
-            yield return GetSchemaVersion(Database.Connection).Run(out f); 
-            if (SchemaVersion.CompareTo(f.Result) != 0) {
+            yield return GetDBSchemaVersion(Database.Connection).Run(out f);
+            if (schemaVersion.CompareTo(f.Result) != 0) {
                 yield return RebuildIndexTask();
                 yield break;
             }
 
             yield return AutoShowConfiguration(argv);
-
-            {
-                var buffer = new StringBuilder();
-                var iter = new TaskEnumerator<TagDatabase.Filter>(Database.GetFilters());
-                while (!iter.Disposed) {
-                    yield return iter.Fetch();
-
-                    foreach (var filter in iter) {
-                        if (buffer.Length > 0)
-                            buffer.Append(",");
-                        buffer.Append(filter.Language);
-                        buffer.Append(":+");
-                        buffer.Append(filter.Pattern.Replace("*", "").Replace("?", ""));
-                    }
-                }
-                LanguageMap = buffer.ToString();
-            }
 
             yield return OnConfigurationChanged();
 
@@ -543,10 +482,6 @@ namespace Ndexer {
                 if (Hotkey_Search_Files.Registered)
                     Hotkey_Search_Files.Unregister();
             }
-            if (Hotkey_Search_Tags != null) {
-                if (Hotkey_Search_Tags.Registered)
-                    Hotkey_Search_Tags.Unregister();
-            }
 
             Keys keyCode, modifiers;
             Future<string> f;
@@ -564,21 +499,6 @@ namespace Ndexer {
                     Scheduler.Start(ShowFullTextSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
                 };
                 Hotkey_Search_Files.Register(HotkeyWindow);
-            }
-
-            yield return Database.GetPreference("Hotkeys.SearchTags.Key").Run(out f);
-            keyCode = (Keys)Enum.Parse(typeof(Keys), f.Result?? "None", true);
-
-            yield return Database.GetPreference("Hotkeys.SearchTags.Modifiers").Run(out f);
-            modifiers = (Keys)Enum.Parse(typeof(Keys), f.Result ?? "None", true);
-
-            Hotkey_Search_Tags = new Hotkey(keyCode, modifiers);
-            if (!Hotkey_Search_Tags.Empty) {
-                Hotkey_Search_Tags.Pressed += (s, e) =>
-                {
-                    Scheduler.Start(ShowSearchTask(), TaskExecutionPolicy.RunAsBackgroundTask);
-                };
-                Hotkey_Search_Tags.Register(HotkeyWindow);
             }
         }
 
@@ -684,21 +604,15 @@ namespace Ndexer {
         }
 
         public static IEnumerator<object> UpdateIndex (IEnumerable<string> filenames) {
-            var gen = new TagGenerator(
-                GetCTagsPath(),
-                LanguageMap
-            );
-
-            var tagIterator = new TaskEnumerator<TagGroup>(
-                gen.GenerateTags(filenames)
-            );
+            long lastWriteTime = 0;
 
             using (new ActiveWorker("Updating index"))
-            while (!tagIterator.Disposed) {
-                yield return tagIterator.Fetch();
+            foreach (var filename in filenames) {
+                yield return Future.RunInThread(
+                    () => System.IO.File.GetLastWriteTimeUtc(filename).ToFileTimeUtc()
+                ).Bind(() => lastWriteTime);
 
-                foreach (var group in tagIterator)
-                    yield return group.Commit();
+                yield return (new FileIndexEntry(filename, lastWriteTime).Commit());
             }
         }
 

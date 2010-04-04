@@ -108,6 +108,9 @@ namespace Ndexer {
             while (lbResults.Items.Count < items.Count)
                 lbResults.Items.Add(o);
 
+            if ((lbResults.SelectedIndex < 0) && (items.Count > 0))
+                lbResults.SelectedIndex = 0;
+
             lbResults.EndUpdate();
         }
 
@@ -409,6 +412,14 @@ namespace Ndexer {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
                 OpenItem(lbResults.SelectedIndex);
+            } else if (e.KeyCode == Keys.Up) {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                lbResults.SelectedIndex = Math.Max(0, lbResults.SelectedIndex - 1);
+            } else if (e.KeyCode == Keys.Down) {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                lbResults.SelectedIndex = Math.Min(lbResults.Items.Count - 1, lbResults.SelectedIndex + 1);
             }
         }
 
@@ -435,7 +446,7 @@ namespace Ndexer {
                 format.LineAlignment = StringAlignment.Near;
                 format.FormatFlags = StringFormatFlags.NoWrap;
 
-                format.Trimming = StringTrimming.EllipsisCharacter;
+                format.Trimming = StringTrimming.EllipsisPath;
                 format.Alignment = StringAlignment.Near;
                 var rect = new RectangleF(e.Bounds.X, e.Bounds.Y + 1, e.Bounds.Width - LineNumberWidth, LineHeight);
                 e.Graphics.DrawString(item.Filename, lbResults.Font, brush, rect, format);
@@ -567,6 +578,14 @@ namespace Ndexer {
 
             Clipboard.Clear();
             Clipboard.SetFileDropList(sc);
+        }
+
+        private void lbResults_KeyDown (object sender, KeyEventArgs e) {
+            if ((e.KeyCode == Keys.Enter) || (e.KeyCode == Keys.Space)) {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                OpenItem(lbResults.SelectedIndex);
+            }
         }
     }
 }

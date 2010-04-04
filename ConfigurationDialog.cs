@@ -11,15 +11,14 @@ using Squared.Task;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using exscape;
+using Squared.Task.Data;
 
 namespace Ndexer {
     public partial class ConfigurationDialog : Form {		
         TagDatabase DB;
 
-        string[] SupportedLanguages;
-
         List<string> Folders = new List<string>();
-        Dictionary<string, List<string>> FileTypes = new Dictionary<string, List<string>>();
+        List<string> Filters = new List<string>();
 
         public bool NeedRestart = false;
 
@@ -31,8 +30,6 @@ namespace Ndexer {
 
             cbTextEditor.Items.Clear();
             cbTextEditor.Items.AddRange(Program.GetDirectorNames());
-
-            SupportedLanguages = Program.GetLanguageNames();
 
             Program.Scheduler.WaitFor(
                 Program.Scheduler.Start(
@@ -48,23 +45,20 @@ namespace Ndexer {
 
             lvFileTypes.BeginUpdate();
             lvFileTypes.Items.Clear();
-            lvFileTypes.Groups.Clear();
             ilFileTypes.Images.Clear();
 
-            foreach (var ft in FileTypes) {
-                lvFileTypes.Groups.Add(ft.Key, ft.Key);
+            foreach (var filter in Filters) {
+                var item = new ListViewItem(filter);
 
-                foreach (var filter in ft.Value) {
-                    var item = new ListViewItem(filter);
-                    item.Group = lvFileTypes.Groups[ft.Key];
-                    string fakeFile = filter.Replace("*", Program.GetExecutablePath() + @"\does_not_exist");
-                    Icon icon = Squared.Util.IO.ExtractAssociatedIcon(fakeFile, false);
-                    if (icon != null) {
-                        ilFileTypes.Images.Add(filter, icon);
-                        item.ImageKey = filter;
-                    }
-                    lvFileTypes.Items.Add(item);
+                string fakeFile = filter.Replace("*", Program.GetExecutablePath() + @"\does_not_exist");
+
+                Icon icon = Squared.Util.IO.ExtractAssociatedIcon(fakeFile, false);
+                if (icon != null) {
+                    ilFileTypes.Images.Add(filter, icon);
+                    item.ImageKey = filter;
                 }
+
+                lvFileTypes.Items.Add(item);
             }
 
             if ((lvFileTypes.Items.Count > 0) && (oldIndex.HasValue))
@@ -132,8 +126,6 @@ namespace Ndexer {
                 txtEditorLocation.Text = f.Result ?? @"C:\Program Files\SciTE\SciTE.exe";
             }
 
-            yield return ReadHotkeyPreference("SearchTags", hkSearchTags);
-
             yield return ReadHotkeyPreference("SearchFiles", hkSearchFiles);
 
             {
@@ -147,12 +139,8 @@ namespace Ndexer {
             while (!iter.Disposed) {
                 yield return iter.Fetch();
 
-                foreach (var filter in iter) {
-                    if (!FileTypes.ContainsKey(filter.Language))
-                        FileTypes[filter.Language] = new List<string>();
-
-                    FileTypes[filter.Language].Add(filter.Pattern);
-                }
+                foreach (var filter in iter)
+                    Filters.Add(filter.Pattern);
             }
 
             RefreshFileTypeList();
@@ -170,7 +158,6 @@ namespace Ndexer {
             if (!System.IO.File.Exists(txtEditorLocation.Text))
                 errors.Add(String.Format("The specified editor ('{0}') was not found.", txtEditorLocation.Text));
 
-            yield return WriteHotkeyPreference("SearchTags", hkSearchTags);
             yield return WriteHotkeyPreference("SearchFiles", hkSearchFiles);
 
             yield return DB.Connection.ExecuteSQL("DELETE FROM Folders");
@@ -186,10 +173,9 @@ namespace Ndexer {
 
             yield return DB.Connection.ExecuteSQL("DELETE FROM Filters");
 
-            using (var query = DB.Connection.BuildQuery("INSERT INTO Filters (Filters_Language, Filters_Pattern) VALUES (?, ?)"))
-                foreach (var ft in FileTypes)
-                    foreach (string filter in ft.Value)
-                        yield return query.ExecuteNonQuery(ft.Key, filter);
+            using (var query = DB.Connection.BuildQuery("INSERT INTO Filters (Filters_Pattern) VALUES (?)"))
+                foreach (var filter in Filters)
+                    yield return query.ExecuteNonQuery(filter);
 
             if (errors.Count == 0) {
                 yield return transaction.Commit();
@@ -277,18 +263,12 @@ namespace Ndexer {
         }
 
         private void cmdAddFileType_Click (object sender, EventArgs e) {
-            using (var dlg = new AddFilterDialog(SupportedLanguages)) {
+            using (var dlg = new AddFilterDialog()) {
                 if (dlg.ShowDialog(this) == DialogResult.OK) {
-                    if (!FileTypes.ContainsKey(dlg.Language))
-                        FileTypes[dlg.Language] = new List<string>();
-
                     string[] filters = dlg.Filter.Split(' ', ';');
 
                     foreach (string filter in filters)
-                        if (FileTypes[dlg.Language].FirstOrDefault(
-                                (f) => String.Compare(f, filter, StringComparison.CurrentCultureIgnoreCase) == 0
-                            ) == null)
-                            FileTypes[dlg.Language].Add(filter);
+                        Filters.Add(filter);
 
                     RefreshFileTypeList();
                     NeedRestart = true;
@@ -298,10 +278,7 @@ namespace Ndexer {
 
         private void cmdRemoveFileType_Click (object sender, EventArgs e) {
             var item = lvFileTypes.SelectedItems[0];
-            FileTypes[item.Group.Name].Remove(item.Text);
-
-            if (FileTypes[item.Group.Name].Count == 0)
-                FileTypes.Remove(item.Group.Name);
+            Filters.Remove(item.Text);
 
             RefreshFileTypeList();
             NeedRestart = true;
