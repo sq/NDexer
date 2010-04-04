@@ -50,7 +50,7 @@ def getMsBuildPath():
         "MSBuildToolsPath"
     )
 
-def getSvnVersion(failIfModified=False):
+def getSvnVersion():
     (result, exitCode) = runProcess("svnversion")
     
     if exitCode != 0:
@@ -60,11 +60,9 @@ def getSvnVersion(failIfModified=False):
     
     version = result[0].strip()
     if version[-1] == 'M':
-        raise Exception("Working copy has local modifications")
+        version = version[:-1]
     elif (':' in version) or ('-' in version):
         raise Exception("Working copy is not at a single revision")
-    else:
-        version = version[:-1]
     
     return int(version)
 

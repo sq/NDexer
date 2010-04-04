@@ -1,5 +1,5 @@
 namespace Ndexer {
     public static partial class Program {
-        public const int Revision = 102;
+        public const int Revision = 108;
     }
 }
