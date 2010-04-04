@@ -194,7 +194,7 @@
             this.lvFileTypes.SmallImageList = this.ilFileTypes;
             this.lvFileTypes.TabIndex = 0;
             this.lvFileTypes.UseCompatibleStateImageBehavior = false;
-            this.lvFileTypes.View = System.Windows.Forms.View.List;
+            this.lvFileTypes.View = System.Windows.Forms.View.SmallIcon;
             this.lvFileTypes.SelectedIndexChanged += new System.EventHandler(this.lvFileTypes_SelectedIndexChanged);
             // 
             // colFilter
@@ -364,6 +364,7 @@
             this.cbTextEditor.Name = "cbTextEditor";
             this.cbTextEditor.Size = new System.Drawing.Size(362, 21);
             this.cbTextEditor.TabIndex = 0;
+            this.cbTextEditor.SelectedIndexChanged += new System.EventHandler(this.cbTextEditor_SelectedIndexChanged);
             // 
             // ConfigurationDialog
             // 

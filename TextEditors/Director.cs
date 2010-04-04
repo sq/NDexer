@@ -5,8 +5,11 @@ using System.Text;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using Squared.Task;
+using System.IO;
 
 namespace Ndexer {
+    public delegate bool LocateExecutableHandler (ref string filename);
+
     public interface IBasicDirector : IDisposable {
         void OpenFile (string filename);
         void OpenFile (string filename, long initialLineNumber);
@@ -106,6 +109,15 @@ namespace Ndexer {
 
         public void Dispose () {
             base.DestroyHandle();
+        }
+
+        protected static bool TryLocateExecutable (string candidatePath, ref string result) {
+            if (File.Exists(candidatePath)) {
+                result = candidatePath;
+                return true;
+            }
+
+            return false;
         }
     }
 }

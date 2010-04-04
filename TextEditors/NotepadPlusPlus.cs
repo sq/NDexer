@@ -6,6 +6,7 @@ using Squared.Task;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.IO;
 
 namespace Ndexer {
     public class NotepadPlusPlusDirector : Director, IBasicDirector {
@@ -35,6 +36,13 @@ namespace Ndexer {
 
         public void OpenFile (string filename, long initialLineNumber) {
             Launch(String.Format("-n{1:0} \"{0}\"", filename, initialLineNumber));
+        }
+
+        public static bool LocateExecutable (ref string filename) {
+            return Director.TryLocateExecutable(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Notepad++\Notepad++.exe"
+                ), ref filename
+            );
         }
     }
 }

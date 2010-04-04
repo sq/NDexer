@@ -287,5 +287,11 @@ namespace Ndexer {
         private void lvFileTypes_SelectedIndexChanged (object sender, EventArgs e) {
             cmdRemoveFileType.Enabled = (lvFileTypes.SelectedIndices.Count > 0);
         }
+
+        private void cbTextEditor_SelectedIndexChanged (object sender, EventArgs e) {
+            string path = null;
+            if (Program.TryLocateEditorExecutable(cbTextEditor.Text, ref path))
+                txtEditorLocation.Text = path;
+        }
     }
 }

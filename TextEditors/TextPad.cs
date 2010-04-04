@@ -6,6 +6,7 @@ using Squared.Task;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.IO;
 
 namespace Ndexer {
     public class TextPadDirector : Director, IBasicDirector {
@@ -35,6 +36,13 @@ namespace Ndexer {
 
         public void OpenFile (string filename, long initialLineNumber) {
             Launch(String.Format("{0}({1})", filename, initialLineNumber));
+        }
+
+        public static bool LocateExecutable (ref string filename) {
+            return Director.TryLocateExecutable(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"TextPad\TextPad.exe"
+                ), ref filename
+            );
         }
     }
 }

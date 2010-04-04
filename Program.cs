@@ -336,6 +336,20 @@ namespace Ndexer {
             return results.ToArray();
         }
 
+        public static bool TryLocateEditorExecutable (string editorName, ref string result) {
+            var directorType = Type.GetType(String.Format("Ndexer.{0}Director", editorName), false, true);
+            if (directorType == null)
+                return false;
+
+            var method = directorType.GetMethod("LocateExecutable", BindingFlags.Static | BindingFlags.Public);
+            if (method == null)
+                return false;
+
+            var handler = (LocateExecutableHandler)Delegate.CreateDelegate(typeof(LocateExecutableHandler), method);
+
+            return handler(ref result);
+        }
+
         public static IBasicDirector GetDirector () {
             var editorName = (string)Scheduler.WaitFor(Database.GetPreference("TextEditor.Name"));
             var editorPath = (string)Scheduler.WaitFor(Database.GetPreference("TextEditor.Location"));

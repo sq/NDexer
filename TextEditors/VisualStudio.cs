@@ -57,5 +57,9 @@ namespace Ndexer {
             OpenFile(filename);
             GetRunningInstance().ExecuteCommand("Edit.GoTo", initialLineNumber.ToString());
         }
+
+        public static bool LocateExecutable (ref string filename) {
+            return false;
+        }
     }
 }

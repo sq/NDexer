@@ -6,6 +6,7 @@ using Squared.Task;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.IO;
 
 namespace Ndexer {
     public class SciTENotRunningException : Exception {
@@ -74,6 +75,13 @@ namespace Ndexer {
 
         public void FindText (string text) {
             SendCommand("find:{0}", Escape(text));
+        }
+
+        public static bool LocateExecutable (ref string filename) {
+            return Director.TryLocateExecutable(Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"SciTE\SciTE.exe"
+                ), ref filename
+            );
         }
     }
 }
