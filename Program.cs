@@ -128,14 +128,13 @@ namespace Ndexer {
                 DatabasePath = System.IO.Path.GetFullPath(argv[0]);
             }
 
-            if (!System.IO.File.Exists(DatabasePath)) {
-                System.IO.File.Copy(GetDataPath() + @"\ndexer.db", DatabasePath);
-            } else {
+            if (System.IO.File.Exists(DatabasePath)) {
                 if (System.IO.File.Exists(DatabasePath + "_new")) {
                     System.IO.File.Move(DatabasePath, DatabasePath + "_old");
                     System.IO.File.Move(DatabasePath + "_new", DatabasePath);
                     System.IO.File.Delete(DatabasePath + "_old");
                 }
+            } else {
             }
 
             Scheduler = new TaskScheduler(JobQueue.WindowsMessageBased);
@@ -223,7 +222,7 @@ namespace Ndexer {
                         MessageBoxButtons.YesNo, MessageBoxIcon.Question
                     ) == DialogResult.Yes) {
 
-                yield return RebuildIndexTask();
+                yield return RebuildIndexTask(true);
             }
         }
 
@@ -250,7 +249,7 @@ namespace Ndexer {
             return long.Parse(Regex.Match(schema, "PRAGMA user_version=(?'version'[0-9]*);", RegexOptions.ExplicitCapture).Groups["version"].Value);
         }
 
-        public static IEnumerator<object> RebuildIndexTask () {
+        public static IEnumerator<object> RebuildIndexTask (bool saveOldData) {
             using (new ActiveWorker("Rebuilding index...")) {
                 var conn = new SQLiteConnection(String.Format("Data Source={0}", DatabasePath + "_new"));
                 conn.Open();
@@ -265,40 +264,43 @@ namespace Ndexer {
                 var trans = cw.CreateTransaction();
                 yield return trans;
 
-                using (var iter = new TaskEnumerator<TagDatabase.Folder>(Database.GetFolders()))
-                while (!iter.Disposed) {
-                    yield return iter.Fetch();
+                if (saveOldData)
+                    using (var iter = new TaskEnumerator<TagDatabase.Folder>(Database.GetFolders()))
+                    while (!iter.Disposed) {
+                        yield return iter.Fetch();
 
-                    foreach (var item in iter)
-                        yield return cw.ExecuteSQL(
-                            "INSERT INTO Folders (Folders_Path) VALUES (?)",
-                            item.Path
-                        );
-                }
+                        foreach (var item in iter)
+                            yield return cw.ExecuteSQL(
+                                "INSERT INTO Folders (Folders_Path) VALUES (?)",
+                                item.Path
+                            );
+                    }
 
-                using (var iter = new TaskEnumerator<TagDatabase.Filter>(Database.GetFilters()))
-                while (!iter.Disposed) {
-                    yield return iter.Fetch();
+                if (saveOldData)
+                    using (var iter = new TaskEnumerator<TagDatabase.Filter>(Database.GetFilters()))
+                    while (!iter.Disposed) {
+                        yield return iter.Fetch();
 
-                    foreach (var item in iter)
-                        yield return cw.ExecuteSQL(
-                            "INSERT INTO Filters (Filters_Pattern) VALUES (?)",
-                            item.Pattern
-                        );
-                }
+                        foreach (var item in iter)
+                            yield return cw.ExecuteSQL(
+                                "INSERT INTO Filters (Filters_Pattern) VALUES (?)",
+                                item.Pattern
+                            );
+                    }
 
-                using (var iter = Database.Connection.BuildQuery(
-                    "SELECT Preferences_Name, Preferences_Value FROM Preferences"
-                ).Execute())
-                while (!iter.Disposed) {
-                    yield return iter.Fetch();
+                if (saveOldData)
+                    using (var iter = Database.Connection.BuildQuery(
+                        "SELECT Preferences_Name, Preferences_Value FROM Preferences"
+                    ).Execute())
+                    while (!iter.Disposed) {
+                        yield return iter.Fetch();
 
-                    foreach (var item in iter)
-                        yield return cw.ExecuteSQL(
-                            "INSERT INTO Preferences (Preferences_Name, Preferences_Value) VALUES (?, ?)",
-                            item.GetValue(0), item.GetValue(1)
-                        );
-                }
+                        foreach (var item in iter)
+                            yield return cw.ExecuteSQL(
+                                "INSERT INTO Preferences (Preferences_Name, Preferences_Value) VALUES (?, ?)",
+                                item.GetValue(0), item.GetValue(1)
+                            );
+                    }
 
                 yield return trans.Commit();
 
@@ -430,7 +432,9 @@ namespace Ndexer {
             Future f;
             yield return GetDBSchemaVersion(Database.Connection).Run(out f);
             if (schemaVersion.CompareTo(f.Result) != 0) {
-                yield return RebuildIndexTask();
+                yield return RebuildIndexTask(
+                    (f.Result != null) && (Convert.ToInt64(f.Result) > 0)
+                );
                 yield break;
             }
 

@@ -87,6 +87,8 @@ namespace Ndexer {
 
             this.Enabled = false;
             this.UseWaitCursor = true;
+
+            Text = String.Format("Search - {0}", Program.DatabasePath);
         }
 
         public void SetConnection(ConnectionWrapper connection) {
