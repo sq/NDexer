@@ -274,7 +274,7 @@ namespace Ndexer {
                     while (!iter.Disposed) {
                         yield return iter.Fetch();
 
-                        foreach (var item in iter)
+                        foreach (TagDatabase.Folder item in iter)
                             yield return cw.ExecuteSQL(
                                 "INSERT INTO Folders (Folders_Path) VALUES (?)",
                                 item.Path
@@ -286,7 +286,7 @@ namespace Ndexer {
                     while (!iter.Disposed) {
                         yield return iter.Fetch();
 
-                        foreach (var item in iter)
+                        foreach (TagDatabase.Filter item in iter)
                             yield return cw.ExecuteSQL(
                                 "INSERT INTO Filters (Filters_Pattern) VALUES (?)",
                                 item.Pattern
