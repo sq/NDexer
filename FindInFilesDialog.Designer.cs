@@ -1,4 +1,5 @@
 namespace Ndexer {
+#if !MONO
     partial class FindInFilesDialog {
         /// <summary>
         /// Required designer variable.
@@ -245,5 +246,6 @@ namespace Ndexer {
         private System.Windows.Forms.Button btnClearSearchField;
         private System.Windows.Forms.ToolStripMenuItem mnuCopyFiles;
     }
+#endif
 }
 

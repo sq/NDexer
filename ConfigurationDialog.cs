@@ -14,6 +14,7 @@ using exscape;
 using Squared.Task.Data;
 
 namespace Ndexer {
+#if !MONO
     public partial class ConfigurationDialog : Form {		
         TagDatabase DB;
 
@@ -294,4 +295,5 @@ namespace Ndexer {
                 txtEditorLocation.Text = path;
         }
     }
+#endif
 }

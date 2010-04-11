@@ -83,21 +83,20 @@ namespace Ndexer {
         public static TaskScheduler Scheduler;
         public static TagDatabase Database;
         public static List<ActiveWorker> ActiveWorkers = new List<ActiveWorker>();
+        public static string TrayCaption;
+        public static string DatabasePath;
+
+#if !MONO
         public static NotifyIcon NotifyIcon;
         public static Icon Icon_Monitoring;
         public static Icon Icon_Working_1, Icon_Working_2;
         public static Hotkey Hotkey_Search_Files;
         public static NativeWindow HotkeyWindow;
         public static ContextMenuStrip ContextMenu;
-        public static string TrayCaption;
-        public static string DatabasePath;
-        public static string LanguageMap;
+#endif
 
         private const int BatchSize = 128;
 
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
         [STAThread]
         static void Main (string[] argv) {
             Application.EnableVisualStyles();
@@ -141,6 +140,18 @@ namespace Ndexer {
 
             Database = new TagDatabase(Scheduler, DatabasePath);
 
+            InitUI();
+
+            Scheduler.Start(
+                MainTask(argv),
+                TaskExecutionPolicy.RunAsBackgroundTask
+            );
+
+            Application.Run();
+        }
+
+        public static void InitUI() {
+#if !MONO
             HotkeyWindow = new NativeWindow();
             HotkeyWindow.CreateHandle(new CreateParams {
                 Caption = "NDexer Hotkey Window",
@@ -197,13 +208,7 @@ namespace Ndexer {
                 RefreshTrayIcon(),
                 TaskExecutionPolicy.RunAsBackgroundTask
             );
-
-            Scheduler.Start(
-                MainTask(argv),
-                TaskExecutionPolicy.RunAsBackgroundTask
-            );
-
-            Application.Run();
+#endif
         }
 
         public static string GetExecutablePath() {
@@ -310,22 +315,7 @@ namespace Ndexer {
             }
         }
 
-        public static IEnumerable<string> GetProcessOutput (string filename, string arguments) {
-            var info = new ProcessStartInfo(filename, arguments);
-            info.CreateNoWindow = true;
-            info.WindowStyle = ProcessWindowStyle.Hidden;
-            info.ErrorDialog = false;
-            info.RedirectStandardOutput = true;
-            info.UseShellExecute = false;
-
-            using (var process = Process.Start(info)) {
-                process.WaitForExit();
-
-                while (!process.StandardOutput.EndOfStream)
-                    yield return process.StandardOutput.ReadLine();
-            }
-        }
-
+#if !MONO
         public static string[] GetDirectorNames () {
             var results = new List<string>();
             var types = Assembly.GetExecutingAssembly().GetTypes();
@@ -369,11 +359,14 @@ namespace Ndexer {
             yield return Database.OpenReadConnection().Run(out f);
             dialog.SetConnection(f.Result);
         }
+#endif
 
         private static IEnumerator<object> TeardownTask () {
             yield return Database.Dispose();
 
+#if !MONO
             NotifyIcon.Visible = false;
+#endif
         }
 
         public static IEnumerator<object> RestartTask () {
@@ -418,9 +411,14 @@ namespace Ndexer {
             }
 
             if (show) {
+#if !MONO
                 using (var dialog = new ConfigurationDialog(Database))
                     if (dialog.ShowDialog() != DialogResult.OK)
                         yield return ExitTask();
+#else
+                Console.WriteLine("Configuration required :-(");
+                yield return ExitTask();
+#endif
             }
         }
 
@@ -459,6 +457,7 @@ namespace Ndexer {
         }
 
         public static IEnumerator<object> RefreshTrayIcon () {
+#if !MONO
             bool toggle = false;
 
             while (true) {
@@ -493,9 +492,13 @@ namespace Ndexer {
 
                 yield return new Sleep(0.5);
             }
+#endif
+
+            yield break;
         }
 
         public static IEnumerator<object> OnConfigurationChanged () {
+#if !MONO
             if (Hotkey_Search_Files != null) {
                 if (Hotkey_Search_Files.Registered)
                     Hotkey_Search_Files.Unregister();
@@ -518,6 +521,9 @@ namespace Ndexer {
                 };
                 Hotkey_Search_Files.Register(HotkeyWindow);
             }
+#endif
+
+            yield break;
         }
 
         public static IEnumerator<object> CommitBatches (BlockingQueue<IEnumerable<string>> batches, Future completion) {

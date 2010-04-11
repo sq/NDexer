@@ -15,6 +15,7 @@ using System.Reflection;
 using Squared.Task.Data.Mapper;
 
 namespace Ndexer {
+#if !MONO
     public partial class FindInFilesDialog : Form {
         [Mapper(Explicit=true)]
         class FtsResult {
@@ -590,4 +591,5 @@ namespace Ndexer {
             }
         }
     }
+#endif
 }

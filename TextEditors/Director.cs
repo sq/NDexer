@@ -8,6 +8,7 @@ using Squared.Task;
 using System.IO;
 
 namespace Ndexer {
+#if !MONO
     public delegate bool LocateExecutableHandler (ref string filename);
 
     public interface IBasicDirector : IDisposable {
@@ -120,4 +121,5 @@ namespace Ndexer {
             return false;
         }
     }
+#endif
 }

@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 
 namespace Ndexer {
+#if !MONO
     public class SciTENotRunningException : Exception {
         public SciTENotRunningException ()
             : base("Unable to find a running instance of SciTE") {
@@ -84,4 +85,5 @@ namespace Ndexer {
             );
         }
     }
+#endif
 }

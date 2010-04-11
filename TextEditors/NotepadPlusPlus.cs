@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 
 namespace Ndexer {
+#if !MONO
     public class NotepadPlusPlusDirector : Director, IBasicDirector {
         public NotepadPlusPlusDirector (string applicationPath)
             : base(applicationPath) {
@@ -45,4 +46,5 @@ namespace Ndexer {
             );
         }
     }
+#endif
 }

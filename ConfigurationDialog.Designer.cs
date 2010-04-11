@@ -1,4 +1,5 @@
 ﻿namespace Ndexer {
+#if !MONO
     partial class ConfigurationDialog {
         /// <summary>
         /// Required designer variable.
@@ -427,4 +428,5 @@
         private System.Windows.Forms.Label lblSearchFiles;
         private exscape.HotkeyControl hkSearchFiles;
     }
+#endif
 }
