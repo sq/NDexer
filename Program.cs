@@ -300,7 +300,7 @@ namespace Ndexer {
                     while (!iter.Disposed) {
                         yield return iter.Fetch();
 
-                        foreach (var item in iter)
+                        foreach (IDataRecord item in iter)
                             yield return cw.ExecuteSQL(
                                 "INSERT INTO Preferences (Preferences_Name, Preferences_Value) VALUES (?, ?)",
                                 item.GetValue(0), item.GetValue(1)
