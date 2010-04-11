@@ -6,10 +6,10 @@ using Squared.Task;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Diagnostics;
-using EnvDTE;
 
 namespace Ndexer {
 #if !MONO
+using EnvDTE;
     public class VisualStudioDirector : Director, IBasicDirector {
         const string DTEProgID = "VisualStudio.DTE";
 
