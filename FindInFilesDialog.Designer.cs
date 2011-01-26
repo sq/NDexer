@@ -52,7 +52,7 @@ namespace Ndexer {
             this.txtSearch.Font = new System.Drawing.Font("Courier New", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.txtSearch.Location = new System.Drawing.Point(2, 2);
             this.txtSearch.Name = "txtSearch";
-            this.txtSearch.Size = new System.Drawing.Size(555, 26);
+            this.txtSearch.Size = new System.Drawing.Size(555, 30);
             this.txtSearch.TabIndex = 0;
             this.txtSearch.WordWrap = false;
             this.txtSearch.TextChanged += new System.EventHandler(this.txtSearch_TextChanged);
@@ -63,9 +63,9 @@ namespace Ndexer {
             this.sbStatus.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.lblStatus,
             this.pbProgress});
-            this.sbStatus.Location = new System.Drawing.Point(0, 451);
+            this.sbStatus.Location = new System.Drawing.Point(0, 448);
             this.sbStatus.Name = "sbStatus";
-            this.sbStatus.Size = new System.Drawing.Size(609, 22);
+            this.sbStatus.Size = new System.Drawing.Size(609, 25);
             this.sbStatus.TabIndex = 2;
             this.sbStatus.Text = "statusStrip1";
             // 
@@ -73,7 +73,7 @@ namespace Ndexer {
             // 
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Overflow = System.Windows.Forms.ToolStripItemOverflow.Never;
-            this.lblStatus.Size = new System.Drawing.Size(492, 17);
+            this.lblStatus.Size = new System.Drawing.Size(492, 20);
             this.lblStatus.Spring = true;
             this.lblStatus.Text = "0 result(s) found";
             this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
@@ -85,7 +85,7 @@ namespace Ndexer {
             this.pbProgress.Maximum = 1000;
             this.pbProgress.Name = "pbProgress";
             this.pbProgress.Overflow = System.Windows.Forms.ToolStripItemOverflow.Never;
-            this.pbProgress.Size = new System.Drawing.Size(100, 16);
+            this.pbProgress.Size = new System.Drawing.Size(100, 19);
             this.pbProgress.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             // 
             // lbResults
@@ -104,9 +104,9 @@ namespace Ndexer {
             this.lbResults.ScrollAlwaysVisible = true;
             this.lbResults.Size = new System.Drawing.Size(605, 420);
             this.lbResults.TabIndex = 1;
-            this.lbResults.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.lbResults_MouseDoubleClick);
             this.lbResults.DrawItem += new System.Windows.Forms.DrawItemEventHandler(this.lbResults_DrawItem);
             this.lbResults.KeyDown += new System.Windows.Forms.KeyEventHandler(this.lbResults_KeyDown);
+            this.lbResults.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.lbResults_MouseDoubleClick);
             // 
             // cmResults
             // 
@@ -205,8 +205,8 @@ namespace Ndexer {
             // 
             // FindInFilesDialog
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 19F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(609, 473);
             this.Controls.Add(this.btnClearSearchField);
             this.Controls.Add(this.lbResults);
@@ -217,8 +217,8 @@ namespace Ndexer {
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FindInFilesDialog";
             this.Text = "Search";
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.SearchDialog_FormClosed);
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SearchDialog_FormClosing);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.SearchDialog_FormClosed);
             this.sbStatus.ResumeLayout(false);
             this.sbStatus.PerformLayout();
             this.cmResults.ResumeLayout(false);

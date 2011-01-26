@@ -18,7 +18,7 @@ namespace Ndexer {
     public partial class ConfigurationDialog : Form {		
         TagDatabase DB;
 
-        List<string> Folders = new List<string>();
+        List<TagDatabase.Folder> Folders = new List<TagDatabase.Folder>();
         List<string> Filters = new List<string>();
 
         public bool NeedRestart = false;
@@ -75,29 +75,16 @@ namespace Ndexer {
 
         private void RefreshFolderList () {
             int? oldIndex = null;
-            if (lvFolders.SelectedIndices.Count > 0)
-                oldIndex = lvFolders.SelectedIndices[0];
+            if (dgFolders.SelectedRows.Count > 0)
+                oldIndex = dgFolders.SelectedRows[0].Index;
 
-            lvFolders.BeginUpdate();
-            lvFolders.Items.Clear();
-            ilFolders.Images.Clear();
+            dgFolders.RowCount = Folders.Count;
 
-            foreach (string folder in Folders) {
-                string folderPath = System.IO.Path.GetFullPath(folder);
-                Icon icon = Squared.Util.IO.ExtractAssociatedIcon(folderPath, false);
-                ilFolders.Images.Add(folder, icon);
-                lvFolders.Items.Add(folder, folder);
-            }
+            if ((dgFolders.RowCount > 0) && (oldIndex.HasValue) &&
+                (oldIndex.Value < dgFolders.Rows.Count))
+                dgFolders.Rows[oldIndex.Value].Selected = true;
 
-            if ((lvFolders.Items.Count > 0) && (oldIndex.HasValue))
-                lvFolders.SelectedIndices.Add(Math.Min(oldIndex.Value, lvFolders.Items.Count - 1));
-
-            lvFolders.EndUpdate();
-
-            if (lvFolders.SelectedIndices.Count > 0)
-                lvFolders.EnsureVisible(lvFolders.SelectedIndices[0]);
-
-            cmdRemoveFolder.Enabled = (lvFolders.SelectedIndices.Count > 0);
+            cmdRemoveFolder.Enabled = (dgFolders.SelectedRows.Count > 0);
         }
 
         private IEnumerator<object> ReadHotkeyPreference (string hotkeyName, HotkeyControl hotkeyControl) {
@@ -130,9 +117,14 @@ namespace Ndexer {
             yield return ReadHotkeyPreference("SearchFiles", hkSearchFiles);
 
             {
-                Future<string[]> f;
-                yield return DB.GetFolderPaths().Run(out f);
-                Folders.AddRange(f.Result);
+                TagDatabase.Folder[] folders = null;
+                var iter = new TaskEnumerator<TagDatabase.Folder>(DB.GetFolders());
+                yield return iter.GetArray().Bind(() => folders);
+
+                Folders.Clear();
+                if (folders != null)
+                    Folders.AddRange(folders);
+
                 RefreshFolderList();
             }
 
@@ -163,12 +155,12 @@ namespace Ndexer {
 
             yield return DB.Connection.ExecuteSQL("DELETE FROM Folders");
 
-            using (var query = DB.Connection.BuildQuery("INSERT INTO Folders (Folders_Path) VALUES (?)")) {
-                foreach (string folder in Folders) {
-                    yield return query.ExecuteNonQuery(folder);
+            using (var query = DB.Connection.BuildQuery("INSERT INTO Folders (Folders_Path, Folders_Excluded) VALUES (?, ?)")) {
+                foreach (var folder in Folders) {
+                    yield return query.ExecuteNonQuery(folder.Path, folder.Excluded);
 
-                    if (!System.IO.Directory.Exists(folder))
-                        errors.Add(String.Format("The specified folder ('{0}') was not found.", folder));
+                    if (!System.IO.Directory.Exists(folder.Path))
+                        errors.Add(String.Format("The specified folder ('{0}') was not found.", folder.Path));
                 }
             }
 
@@ -233,11 +225,11 @@ namespace Ndexer {
         }
 
         private void lvFolders_SelectedIndexChanged (object sender, EventArgs e) {
-            cmdRemoveFolder.Enabled = (lvFolders.SelectedIndices.Count > 0);
+            cmdRemoveFolder.Enabled = (dgFolders.SelectedRows.Count > 0);
         }
 
         private void cmdRemoveFolder_Click (object sender, EventArgs e) {
-            Folders.RemoveAt(lvFolders.SelectedIndices[0]);
+            Folders.RemoveAt(dgFolders.SelectedRows[0].Index);
             RefreshFolderList();
             NeedRestart = true;
         }
@@ -252,11 +244,14 @@ namespace Ndexer {
                         folderPath += "\\";
 
                     if (Folders.FirstOrDefault(
-                            (f) => String.Compare(f, folderPath, StringComparison.CurrentCultureIgnoreCase) == 0
-                        ) != null)
+                            (f) => String.Compare(f.Path, folderPath, StringComparison.CurrentCultureIgnoreCase) == 0
+                        ).Path != null)
                         return;
 
-                    Folders.Add(folderPath);
+                    Folders.Add(new TagDatabase.Folder {
+                        Path = folderPath,
+                        Excluded = false
+                    });
                     RefreshFolderList();
                     NeedRestart = true;
                 }
@@ -293,6 +288,38 @@ namespace Ndexer {
             string path = null;
             if (Program.TryLocateEditorExecutable(cbTextEditor.Text, ref path))
                 txtEditorLocation.Text = path;
+        }
+
+        private void dgFolders_CellValueNeeded (object sender, DataGridViewCellValueEventArgs e) {
+            if ((e.RowIndex < 0) || (e.RowIndex >= Folders.Count))
+                return;
+
+            switch (e.ColumnIndex) {
+                case 0:
+                    e.Value = Folders[e.RowIndex].Path;
+                    break;
+                default:
+                    e.Value = Folders[e.RowIndex].Excluded;
+                    break;
+            }
+        }
+
+        private void dgFolders_CellValuePushed (object sender, DataGridViewCellValueEventArgs e) {
+            if ((e.RowIndex < 0) || (e.RowIndex >= Folders.Count))
+                return;
+
+            var f = Folders[e.RowIndex];
+
+            switch (e.ColumnIndex) {
+                case 0:
+                    f.Path = (string)e.Value;
+                    break;
+                default:
+                    f.Excluded = (bool)e.Value;
+                    break;
+            }
+
+            Folders[e.RowIndex] = f;
         }
     }
 #endif

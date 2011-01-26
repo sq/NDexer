@@ -23,6 +23,7 @@ namespace Ndexer {
         public struct Folder {
             public long ID;
             public string Path;
+            public bool Excluded;
         }
 
         public struct SourceFile {
@@ -172,7 +173,7 @@ namespace Ndexer {
             yield return OpenReadConnection().Run(out f);
 
             using (var conn = f.Result)
-            using (var query = conn.BuildQuery(@"SELECT Folders_ID, Folders_Path FROM Folders"))
+            using (var query = conn.BuildQuery(@"SELECT Folders_ID, Folders_Path, Folders_Excluded FROM Folders"))
             using (var iter = query.Execute())
             while (!iter.Disposed) {
                 yield return iter.Fetch();
@@ -180,6 +181,7 @@ namespace Ndexer {
                 foreach (var item in iter) {
                     folder.ID = item.GetInt64(0);
                     folder.Path = item.GetString(1);
+                    folder.Excluded = item.GetBoolean(2);
                     yield return new NextValue(folder);
                 }
             }
@@ -276,15 +278,20 @@ namespace Ndexer {
 
         public IEnumerator<object> UpdateFileListAndGetChangeSet (BlockingQueue<Change> changeSet) {
             string filters;
-            string[] folders;
+            Folder[] folders = null;
+            string[] exclusionList;
 
             {
                 Future<string[]> f;
                 yield return GetFilterPatterns().Run(out f);
                 filters = String.Join(";", f.Result);
+            }
 
-                yield return GetFolderPaths().Run(out f);
-                folders = f.Result;
+            {
+                var iter = new TaskEnumerator<TagDatabase.Folder>(GetFolders());
+                yield return Scheduler.Start(iter.GetArray())
+                    .Bind(() => folders);
+                exclusionList = (from folder in folders where folder.Excluded select folder.Path).ToArray();
             }
 
             using (var iterator = new TaskEnumerator<SourceFile>(GetSourceFiles()))
@@ -296,9 +303,13 @@ namespace Ndexer {
                     bool fileExists = false;
 
                     foreach (var folder in folders) {
-                        if (file.Path.StartsWith(folder)) {
-                            validFolder = true;
-                            break;
+                        if (file.Path.StartsWith(folder.Path)) {
+                            if (folder.Excluded) {
+                                validFolder = false;
+                                break;
+                            } else {
+                                validFolder = true;
+                            }
                         }
                     }
 
@@ -313,8 +324,11 @@ namespace Ndexer {
             }
 
             foreach (var folder in folders) {
+                if (folder.Excluded)
+                    continue;
+
                 var enumerator = Squared.Util.IO.EnumDirectoryEntries(
-                    folder, filters, true, Squared.Util.IO.IsFile
+                    folder.Path, filters, true, Squared.Util.IO.IsFile
                 );
 
                 using (var dirEntries = TaskEnumerator<IO.DirectoryEntry>.FromEnumerable(enumerator))
@@ -322,6 +336,17 @@ namespace Ndexer {
                     yield return dirEntries.Fetch();
 
                     foreach (var entry in dirEntries) {
+                        bool excluded = false;
+                        foreach (var exclusion in exclusionList) {
+                            if (entry.Name.StartsWith(exclusion)) {
+                                excluded = true;
+                                break;
+                            }
+                        }
+
+                        if (excluded)
+                            continue;
+
                         long newTimestamp = entry.LastWritten;
                         long oldTimestamp = 0;
 

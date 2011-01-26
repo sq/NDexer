@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C# Express 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ndexer", "Ndexer.csproj", "{536F4E2B-A2C2-4E49-83A3-7CD5137B552E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Squared.Task", "ext\squared.tasklib\Squared.Task.csproj", "{173ABDCA-7278-46FF-A300-D3BF8CCEF181}"

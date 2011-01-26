@@ -264,7 +264,8 @@ namespace Ndexer {
 
                 long schemaVersion = GetEmbeddedSchemaVersion();
 
-                cw.ExecuteSQL(GetEmbeddedSchema());
+                var fSchema = cw.ExecuteSQL(GetEmbeddedSchema());
+                yield return fSchema;
 
                 var trans = cw.CreateTransaction();
                 yield return trans;
@@ -276,8 +277,8 @@ namespace Ndexer {
 
                         foreach (TagDatabase.Folder item in iter)
                             yield return cw.ExecuteSQL(
-                                "INSERT INTO Folders (Folders_Path) VALUES (?)",
-                                item.Path
+                                "INSERT INTO Folders (Folders_Path, Folders_Excluded) VALUES (?, ?)",
+                                item.Path, item.Excluded
                             );
                     }
 
@@ -668,16 +669,25 @@ namespace Ndexer {
                 TaskExecutionPolicy.RunAsBackgroundTask
             );
 
-            Future<string[]> f;
+            string[] filters;
+            TagDatabase.Folder[] folders = null;
 
-            yield return Database.GetFilterPatterns().Run(out f);
-            var filters = f.Result;
+            {
+                Future<string[]> f;
+                yield return Database.GetFilterPatterns().Run(out f);
+                filters = f.Result;
+            }
 
-            yield return Database.GetFolderPaths().Run(out f);
-            var folders = f.Result;
+            {
+                var iter = new TaskEnumerator<TagDatabase.Folder>(Database.GetFolders());
+                yield return Scheduler.Start(iter.GetArray())
+                    .Bind( () => folders );
+            }
+
+            var exclusionList = (from folder in folders where folder.Excluded select folder.Path).ToArray();
 
             DiskMonitor monitor = new DiskMonitor(
-                folders,
+                (from folder in folders select folder.Path).ToArray(),
                 filters,
                 new string[] {
                     System.Text.RegularExpressions.Regex.Escape(@"\.svn\"),
@@ -713,11 +723,32 @@ namespace Ndexer {
                     now = DateTime.Now.Ticks;
                     foreach (string filename in monitor.GetChangedFiles().Distinct()) {
                         lastDiskChange = now;
-                        changedFiles.Add(filename);
+
+                        bool excluded = false;
+                        foreach (var exclusion in exclusionList) {
+                            if (filename.StartsWith(exclusion)) {
+                                excluded = true;
+                                break;
+                            }
+                        }
+
+                        if (!excluded)
+                            changedFiles.Add(filename);
                     }
+
                     foreach (string filename in monitor.GetDeletedFiles().Distinct()) {
                         lastDiskChange = now;
-                        deletedFiles.Add(filename);
+
+                        bool excluded = false;
+                        foreach (var exclusion in exclusionList) {
+                            if (filename.StartsWith(exclusion)) {
+                                excluded = true;
+                                break;
+                            }
+                        }
+
+                        if (!excluded)
+                            deletedFiles.Add(filename);
                     }
                 }
 
