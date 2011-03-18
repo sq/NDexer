@@ -155,7 +155,7 @@ namespace Ndexer {
             return result;
         }
 
-        IEnumerator<object> SearchInFiles (SearchQuery search, BlockingQueue<string> filenames, Future completionFuture) {
+        IEnumerator<object> SearchInFiles (SearchQuery search, BlockingQueue<string> filenames, IFuture completionFuture) {
             var searchedFiles = new List<string>();
             var buffer = new List<SearchResult>();
             var sb = new StringBuilder();
@@ -294,7 +294,7 @@ namespace Ndexer {
             lbResults.Items.Clear();
 
             var filenames = new BlockingQueue<string>();
-            var completionFuture = new Future();
+            var completionFuture = new Future<object>();
 
             using (var fileSearch = Program.Scheduler.Start(
                 SearchInFiles(search, filenames, completionFuture),

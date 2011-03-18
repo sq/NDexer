@@ -350,7 +350,7 @@ namespace Ndexer {
                         long newTimestamp = entry.LastWritten;
                         long oldTimestamp = 0;
 
-                        Future f;
+                        IFuture f;
                         yield return GetSourceFileTimestamp(entry.Name).Run(out f);
                         if (f.Result is long)
                             oldTimestamp = (long)f.Result;
@@ -433,7 +433,7 @@ namespace Ndexer {
                 _MemoizationHits += 1;
             } else {
                 _MemoizationMisses += 1;
-                Future f;
+                IFuture f;
                 yield return task(argument).Run(out f);
                 result = f.Result;
 

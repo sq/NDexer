@@ -44,7 +44,7 @@ namespace Ndexer {
         protected IntPtr _EditorWindow = IntPtr.Zero;
         protected string _ApplicationPath = null;
 
-        private Future _CopyDataWaiter = null;
+        private IFuture _CopyDataWaiter = null;
 
         protected abstract IntPtr FindDirectorWindow ();
         protected abstract IntPtr FindEditorWindow ();
@@ -99,8 +99,8 @@ namespace Ndexer {
             }
         }
 
-        public Future WaitForCopyData () {
-            _CopyDataWaiter = new Future();
+        public IFuture WaitForCopyData () {
+            _CopyDataWaiter = new Future<object>();
             return _CopyDataWaiter;
         }
 

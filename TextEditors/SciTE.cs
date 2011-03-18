@@ -43,7 +43,7 @@ namespace Ndexer {
             process.Dispose();
         }
 
-        public Future SendCommand (string command, params object[] parameters) {
+        public IFuture SendCommand (string command, params object[] parameters) {
             var response = WaitForCopyData();
 
             string commandText = String.Format(command, parameters);

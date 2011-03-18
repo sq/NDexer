@@ -428,7 +428,7 @@ namespace Ndexer {
 
             var schemaVersion = GetEmbeddedSchemaVersion();
 
-            Future f;
+            IFuture f;
             yield return GetDBSchemaVersion(Database.Connection).Run(out f);
             if (schemaVersion.CompareTo(f.Result) != 0) {
                 yield return RebuildIndexTask(
@@ -527,7 +527,7 @@ namespace Ndexer {
             yield break;
         }
 
-        public static IEnumerator<object> CommitBatches (BlockingQueue<IEnumerable<string>> batches, Future completion) {
+        public static IEnumerator<object> CommitBatches (BlockingQueue<IEnumerable<string>> batches, IFuture completion) {
             while (batches.Count > 0 || !completion.Completed) {
                 var f = batches.Dequeue();                
                 yield return f;
@@ -541,7 +541,7 @@ namespace Ndexer {
         public static IEnumerator<object> ScanFiles () {
             var time_start = DateTime.UtcNow.Ticks;
 
-            var completion = new Future();
+            var completion = new Future<object>();
             var batchQueue = new BlockingQueue<IEnumerable<string>>();
             var changedFiles = new List<string>();
             var deletedFiles = new List<string>();
