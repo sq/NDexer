@@ -26,7 +26,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Ndexer</RootNamespace>
     <AssemblyName>Ndexer</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -190,11 +190,11 @@
     <EmbeddedResource Include="schema.sql" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="ext\squared.tasklib\Squared.Task.csproj">
+    <ProjectReference Include="..\Fracture\Squared\TaskLib\Squared.Task.csproj">
       <Project>{173ABDCA-7278-46FF-A300-D3BF8CCEF181}</Project>
       <Name>Squared.Task</Name>
     </ProjectReference>
-    <ProjectReference Include="ext\squared.util\Squared.Util.csproj">
+    <ProjectReference Include="..\Fracture\Squared\Util\Squared.Util.csproj">
       <Project>{D7F549CF-E0A6-491C-A78C-ECAB590BB2A7}</Project>
       <Name>Squared.Util</Name>
     </ProjectReference>
