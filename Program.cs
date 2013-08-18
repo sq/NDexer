@@ -1,21 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
-using System.IO;
-using System.Data;
-using System.Data.SQLite;
+﻿using MovablePython;
 using Squared.Task;
-using System.Drawing;
-using System.Diagnostics;
-using System.Threading;
-using System.Runtime.InteropServices;
 using Squared.Task.Data;
 using Squared.Task.IO;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Data.SQLite;
+using System.Drawing;
+using System.IO;
+using System.Linq;
 using System.Reflection;
-using System.Text;
-using MovablePython;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
 
 namespace Ndexer {
     public class ActiveWorker : IDisposable {
@@ -494,8 +490,6 @@ namespace Ndexer {
                 yield return new Sleep(0.5);
             }
 #endif
-
-            yield break;
         }
 
         public static IEnumerator<object> OnConfigurationChanged () {

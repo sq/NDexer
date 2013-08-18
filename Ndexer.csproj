@@ -135,6 +135,7 @@
     <Compile Include="SearchResultListBox.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="TextEditors\SublimeText.cs" />
     <Compile Include="TextEditors\Director.cs" />
     <Compile Include="TextEditors\NotepadPlusPlus.cs" />
     <Compile Include="TextEditors\SciTE.cs" />
