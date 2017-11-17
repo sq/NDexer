@@ -322,6 +322,10 @@ namespace Ndexer {
 
             Folders[e.RowIndex] = f;
         }
+
+        private void dgFolders_SelectionChanged (object sender, EventArgs e) {
+            cmdRemoveFolder.Enabled = (dgFolders.SelectedRows.Count > 0);
+        }
     }
 #endif
 }

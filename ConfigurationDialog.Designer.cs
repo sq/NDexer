@@ -42,6 +42,8 @@
             this.colFilter = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.gbFolders = new System.Windows.Forms.GroupBox();
             this.dgFolders = new System.Windows.Forms.DataGridView();
+            this.colFolderPath = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colExcludeFolder = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.cmdAddFolder = new System.Windows.Forms.Button();
             this.cmdRemoveFolder = new System.Windows.Forms.Button();
             this.tabUI = new System.Windows.Forms.TabPage();
@@ -53,8 +55,6 @@
             this.txtEditorLocation = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.cbTextEditor = new System.Windows.Forms.ComboBox();
-            this.colFolderPath = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colExcludeFolder = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.tcTabs.SuspendLayout();
             this.tabIndex.SuspendLayout();
             this.gbFileTypes.SuspendLayout();
@@ -263,6 +263,28 @@
             this.dgFolders.VirtualMode = true;
             this.dgFolders.CellValueNeeded += new System.Windows.Forms.DataGridViewCellValueEventHandler(this.dgFolders_CellValueNeeded);
             this.dgFolders.CellValuePushed += new System.Windows.Forms.DataGridViewCellValueEventHandler(this.dgFolders_CellValuePushed);
+            this.dgFolders.SelectionChanged += new System.EventHandler(this.dgFolders_SelectionChanged);
+            // 
+            // colFolderPath
+            // 
+            this.colFolderPath.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Window;
+            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.colFolderPath.DefaultCellStyle = dataGridViewCellStyle1;
+            this.colFolderPath.HeaderText = "Folder Path";
+            this.colFolderPath.Name = "colFolderPath";
+            // 
+            // colExcludeFolder
+            // 
+            this.colExcludeFolder.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+            this.colExcludeFolder.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.colExcludeFolder.HeaderText = "Exclude";
+            this.colExcludeFolder.Name = "colExcludeFolder";
+            this.colExcludeFolder.Width = 69;
             // 
             // cmdAddFolder
             // 
@@ -403,27 +425,6 @@
             this.cbTextEditor.Size = new System.Drawing.Size(541, 28);
             this.cbTextEditor.TabIndex = 0;
             this.cbTextEditor.SelectedIndexChanged += new System.EventHandler(this.cbTextEditor_SelectedIndexChanged);
-            // 
-            // colFolderPath
-            // 
-            this.colFolderPath.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.Fill;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Window;
-            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.ControlText;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.colFolderPath.DefaultCellStyle = dataGridViewCellStyle1;
-            this.colFolderPath.HeaderText = "Folder Path";
-            this.colFolderPath.Name = "colFolderPath";
-            // 
-            // colExcludeFolder
-            // 
-            this.colExcludeFolder.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
-            this.colExcludeFolder.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.colExcludeFolder.HeaderText = "Exclude";
-            this.colExcludeFolder.Name = "colExcludeFolder";
-            this.colExcludeFolder.Width = 69;
             // 
             // ConfigurationDialog
             // 

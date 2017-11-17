@@ -352,6 +352,8 @@ namespace Ndexer {
         public static IEnumerator<object> ShowFullTextSearchTask () {
             var dialog = new FindInFilesDialog();
             dialog.Show();
+            dialog.BringToFront();
+            dialog.Focus();
 
             Future<ConnectionWrapper> f;
             yield return Database.OpenReadConnection().Run(out f);
