@@ -591,6 +591,11 @@ namespace Ndexer {
                 OpenItem(lbResults.SelectedIndex);
             }
         }
+
+        private void FindInFilesDialog_Load (object sender, EventArgs e) {
+            AutoScaleDimensions = new SizeF(96, 96);
+            AutoScaleMode = AutoScaleMode.Dpi;
+        }
     }
 #endif
 }
