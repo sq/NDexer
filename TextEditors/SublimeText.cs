@@ -20,7 +20,10 @@ namespace Ndexer {
         public void Launch (string arguments) {
             var info = new ProcessStartInfo(_ApplicationPath, arguments);
             var process = Process.Start(info);
-            process.WaitForInputIdle();
+            try {
+                process.WaitForInputIdle();
+            } catch (Exception exc) {
+            }
             _EditorWindow = FindEditorWindow();
             process.Dispose();
         }

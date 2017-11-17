@@ -42,8 +42,6 @@
             this.colFilter = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.gbFolders = new System.Windows.Forms.GroupBox();
             this.dgFolders = new System.Windows.Forms.DataGridView();
-            this.colFolderPath = new System.Windows.Forms.DataGridViewTextBoxColumn();
-            this.colExcludeFolder = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.cmdAddFolder = new System.Windows.Forms.Button();
             this.cmdRemoveFolder = new System.Windows.Forms.Button();
             this.tabUI = new System.Windows.Forms.TabPage();
@@ -55,6 +53,8 @@
             this.txtEditorLocation = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.cbTextEditor = new System.Windows.Forms.ComboBox();
+            this.colFolderPath = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.colExcludeFolder = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.tcTabs.SuspendLayout();
             this.tabIndex.SuspendLayout();
             this.gbFileTypes.SuspendLayout();
@@ -75,10 +75,10 @@
             // 
             this.cmdCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cmdCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cmdCancel.Location = new System.Drawing.Point(401, 484);
-            this.cmdCancel.Margin = new System.Windows.Forms.Padding(4);
+            this.cmdCancel.Location = new System.Drawing.Point(451, 605);
+            this.cmdCancel.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.cmdCancel.Name = "cmdCancel";
-            this.cmdCancel.Size = new System.Drawing.Size(120, 31);
+            this.cmdCancel.Size = new System.Drawing.Size(135, 39);
             this.cmdCancel.TabIndex = 2;
             this.cmdCancel.Text = "Cancel";
             this.cmdCancel.UseVisualStyleBackColor = true;
@@ -88,10 +88,10 @@
             // 
             this.cmdOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cmdOK.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cmdOK.Location = new System.Drawing.Point(279, 484);
-            this.cmdOK.Margin = new System.Windows.Forms.Padding(4);
+            this.cmdOK.Location = new System.Drawing.Point(314, 605);
+            this.cmdOK.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.cmdOK.Name = "cmdOK";
-            this.cmdOK.Size = new System.Drawing.Size(120, 31);
+            this.cmdOK.Size = new System.Drawing.Size(135, 39);
             this.cmdOK.TabIndex = 3;
             this.cmdOK.Text = "OK";
             this.cmdOK.UseVisualStyleBackColor = true;
@@ -99,16 +99,16 @@
             // 
             // tcTabs
             // 
-            this.tcTabs.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.tcTabs.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tcTabs.Controls.Add(this.tabIndex);
             this.tcTabs.Controls.Add(this.tabUI);
-            this.tcTabs.Location = new System.Drawing.Point(4, 4);
-            this.tcTabs.Margin = new System.Windows.Forms.Padding(4);
+            this.tcTabs.Location = new System.Drawing.Point(4, 5);
+            this.tcTabs.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.tcTabs.Name = "tcTabs";
             this.tcTabs.SelectedIndex = 0;
-            this.tcTabs.Size = new System.Drawing.Size(517, 475);
+            this.tcTabs.Size = new System.Drawing.Size(582, 594);
             this.tcTabs.TabIndex = 7;
             // 
             // tabIndex
@@ -117,46 +117,46 @@
             this.tabIndex.Controls.Add(this.lblIndexLocation);
             this.tabIndex.Controls.Add(this.gbFileTypes);
             this.tabIndex.Controls.Add(this.gbFolders);
-            this.tabIndex.Location = new System.Drawing.Point(4, 25);
-            this.tabIndex.Margin = new System.Windows.Forms.Padding(4);
+            this.tabIndex.Location = new System.Drawing.Point(4, 29);
+            this.tabIndex.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.tabIndex.Name = "tabIndex";
-            this.tabIndex.Padding = new System.Windows.Forms.Padding(4);
-            this.tabIndex.Size = new System.Drawing.Size(509, 446);
+            this.tabIndex.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.tabIndex.Size = new System.Drawing.Size(574, 561);
             this.tabIndex.TabIndex = 0;
             this.tabIndex.Text = "Indexing";
             this.tabIndex.UseVisualStyleBackColor = true;
             // 
             // txtIndexLocation
             // 
-            this.txtIndexLocation.Location = new System.Drawing.Point(123, 10);
-            this.txtIndexLocation.Margin = new System.Windows.Forms.Padding(4);
+            this.txtIndexLocation.Location = new System.Drawing.Point(138, 12);
+            this.txtIndexLocation.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.txtIndexLocation.Name = "txtIndexLocation";
             this.txtIndexLocation.ReadOnly = true;
-            this.txtIndexLocation.Size = new System.Drawing.Size(376, 22);
+            this.txtIndexLocation.Size = new System.Drawing.Size(422, 26);
             this.txtIndexLocation.TabIndex = 5;
             // 
             // lblIndexLocation
             // 
             this.lblIndexLocation.AutoSize = true;
-            this.lblIndexLocation.Location = new System.Drawing.Point(8, 14);
+            this.lblIndexLocation.Location = new System.Drawing.Point(9, 18);
             this.lblIndexLocation.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblIndexLocation.Name = "lblIndexLocation";
-            this.lblIndexLocation.Size = new System.Drawing.Size(103, 17);
+            this.lblIndexLocation.Size = new System.Drawing.Size(117, 20);
             this.lblIndexLocation.TabIndex = 4;
             this.lblIndexLocation.Text = "Index Location:";
             // 
             // gbFileTypes
             // 
-            this.gbFileTypes.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbFileTypes.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.gbFileTypes.Controls.Add(this.cmdAddFileType);
             this.gbFileTypes.Controls.Add(this.cmdRemoveFileType);
             this.gbFileTypes.Controls.Add(this.lvFileTypes);
-            this.gbFileTypes.Location = new System.Drawing.Point(4, 42);
-            this.gbFileTypes.Margin = new System.Windows.Forms.Padding(4);
+            this.gbFileTypes.Location = new System.Drawing.Point(4, 52);
+            this.gbFileTypes.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.gbFileTypes.Name = "gbFileTypes";
-            this.gbFileTypes.Padding = new System.Windows.Forms.Padding(4);
-            this.gbFileTypes.Size = new System.Drawing.Size(499, 230);
+            this.gbFileTypes.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.gbFileTypes.Size = new System.Drawing.Size(561, 288);
             this.gbFileTypes.TabIndex = 3;
             this.gbFileTypes.TabStop = false;
             this.gbFileTypes.Text = "File Types";
@@ -165,10 +165,10 @@
             // 
             this.cmdAddFileType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cmdAddFileType.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cmdAddFileType.Location = new System.Drawing.Point(248, 192);
-            this.cmdAddFileType.Margin = new System.Windows.Forms.Padding(4);
+            this.cmdAddFileType.Location = new System.Drawing.Point(279, 240);
+            this.cmdAddFileType.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.cmdAddFileType.Name = "cmdAddFileType";
-            this.cmdAddFileType.Size = new System.Drawing.Size(120, 31);
+            this.cmdAddFileType.Size = new System.Drawing.Size(135, 39);
             this.cmdAddFileType.TabIndex = 7;
             this.cmdAddFileType.Text = "Add...";
             this.cmdAddFileType.UseVisualStyleBackColor = true;
@@ -178,10 +178,10 @@
             // 
             this.cmdRemoveFileType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cmdRemoveFileType.Enabled = false;
-            this.cmdRemoveFileType.Location = new System.Drawing.Point(371, 192);
-            this.cmdRemoveFileType.Margin = new System.Windows.Forms.Padding(4);
+            this.cmdRemoveFileType.Location = new System.Drawing.Point(417, 240);
+            this.cmdRemoveFileType.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.cmdRemoveFileType.Name = "cmdRemoveFileType";
-            this.cmdRemoveFileType.Size = new System.Drawing.Size(120, 31);
+            this.cmdRemoveFileType.Size = new System.Drawing.Size(135, 39);
             this.cmdRemoveFileType.TabIndex = 6;
             this.cmdRemoveFileType.Text = "Remove";
             this.cmdRemoveFileType.UseVisualStyleBackColor = true;
@@ -189,17 +189,17 @@
             // 
             // lvFileTypes
             // 
-            this.lvFileTypes.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.lvFileTypes.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.lvFileTypes.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colFilter});
             this.lvFileTypes.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.None;
             this.lvFileTypes.HideSelection = false;
-            this.lvFileTypes.Location = new System.Drawing.Point(8, 23);
-            this.lvFileTypes.Margin = new System.Windows.Forms.Padding(4);
+            this.lvFileTypes.Location = new System.Drawing.Point(9, 29);
+            this.lvFileTypes.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.lvFileTypes.Name = "lvFileTypes";
-            this.lvFileTypes.Size = new System.Drawing.Size(481, 164);
+            this.lvFileTypes.Size = new System.Drawing.Size(541, 204);
             this.lvFileTypes.SmallImageList = this.ilFileTypes;
             this.lvFileTypes.TabIndex = 0;
             this.lvFileTypes.UseCompatibleStateImageBehavior = false;
@@ -212,16 +212,16 @@
             // 
             // gbFolders
             // 
-            this.gbFolders.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbFolders.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.gbFolders.Controls.Add(this.dgFolders);
             this.gbFolders.Controls.Add(this.cmdAddFolder);
             this.gbFolders.Controls.Add(this.cmdRemoveFolder);
-            this.gbFolders.Location = new System.Drawing.Point(4, 279);
-            this.gbFolders.Margin = new System.Windows.Forms.Padding(4);
+            this.gbFolders.Location = new System.Drawing.Point(4, 349);
+            this.gbFolders.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.gbFolders.Name = "gbFolders";
-            this.gbFolders.Padding = new System.Windows.Forms.Padding(4);
-            this.gbFolders.Size = new System.Drawing.Size(499, 159);
+            this.gbFolders.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.gbFolders.Size = new System.Drawing.Size(561, 199);
             this.gbFolders.TabIndex = 2;
             this.gbFolders.TabStop = false;
             this.gbFolders.Text = "Folders";
@@ -232,9 +232,9 @@
             this.dgFolders.AllowUserToDeleteRows = false;
             this.dgFolders.AllowUserToResizeColumns = false;
             this.dgFolders.AllowUserToResizeRows = false;
-            this.dgFolders.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-                        | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.dgFolders.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.dgFolders.BackgroundColor = System.Drawing.SystemColors.Window;
             this.dgFolders.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
             this.dgFolders.ColumnHeadersBorderStyle = System.Windows.Forms.DataGridViewHeaderBorderStyle.None;
@@ -243,7 +243,8 @@
             this.colFolderPath,
             this.colExcludeFolder});
             this.dgFolders.GridColor = System.Drawing.SystemColors.Window;
-            this.dgFolders.Location = new System.Drawing.Point(8, 22);
+            this.dgFolders.Location = new System.Drawing.Point(9, 28);
+            this.dgFolders.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.dgFolders.Name = "dgFolders";
             this.dgFolders.RowHeadersVisible = false;
             this.dgFolders.RowHeadersWidthSizeMode = System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode.DisableResizing;
@@ -256,12 +257,152 @@
             this.dgFolders.ShowCellErrors = false;
             this.dgFolders.ShowEditingIcon = false;
             this.dgFolders.ShowRowErrors = false;
-            this.dgFolders.Size = new System.Drawing.Size(481, 92);
+            this.dgFolders.Size = new System.Drawing.Size(541, 115);
             this.dgFolders.StandardTab = true;
             this.dgFolders.TabIndex = 6;
             this.dgFolders.VirtualMode = true;
             this.dgFolders.CellValueNeeded += new System.Windows.Forms.DataGridViewCellValueEventHandler(this.dgFolders_CellValueNeeded);
             this.dgFolders.CellValuePushed += new System.Windows.Forms.DataGridViewCellValueEventHandler(this.dgFolders_CellValuePushed);
+            // 
+            // cmdAddFolder
+            // 
+            this.cmdAddFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.cmdAddFolder.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cmdAddFolder.Location = new System.Drawing.Point(279, 151);
+            this.cmdAddFolder.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.cmdAddFolder.Name = "cmdAddFolder";
+            this.cmdAddFolder.Size = new System.Drawing.Size(135, 39);
+            this.cmdAddFolder.TabIndex = 5;
+            this.cmdAddFolder.Text = "Add...";
+            this.cmdAddFolder.UseVisualStyleBackColor = true;
+            this.cmdAddFolder.Click += new System.EventHandler(this.cmdAddFolder_Click);
+            // 
+            // cmdRemoveFolder
+            // 
+            this.cmdRemoveFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.cmdRemoveFolder.Enabled = false;
+            this.cmdRemoveFolder.Location = new System.Drawing.Point(417, 151);
+            this.cmdRemoveFolder.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.cmdRemoveFolder.Name = "cmdRemoveFolder";
+            this.cmdRemoveFolder.Size = new System.Drawing.Size(135, 39);
+            this.cmdRemoveFolder.TabIndex = 4;
+            this.cmdRemoveFolder.Text = "Remove";
+            this.cmdRemoveFolder.UseVisualStyleBackColor = true;
+            this.cmdRemoveFolder.Click += new System.EventHandler(this.cmdRemoveFolder_Click);
+            // 
+            // tabUI
+            // 
+            this.tabUI.Controls.Add(this.gbHotkeys);
+            this.tabUI.Controls.Add(this.gbEditor);
+            this.tabUI.Location = new System.Drawing.Point(4, 29);
+            this.tabUI.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.tabUI.Name = "tabUI";
+            this.tabUI.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.tabUI.Size = new System.Drawing.Size(574, 561);
+            this.tabUI.TabIndex = 1;
+            this.tabUI.Text = "UI";
+            this.tabUI.UseVisualStyleBackColor = true;
+            // 
+            // gbHotkeys
+            // 
+            this.gbHotkeys.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbHotkeys.Controls.Add(this.lblSearchFiles);
+            this.gbHotkeys.Controls.Add(this.hkSearchFiles);
+            this.gbHotkeys.Location = new System.Drawing.Point(4, 134);
+            this.gbHotkeys.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.gbHotkeys.Name = "gbHotkeys";
+            this.gbHotkeys.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.gbHotkeys.Size = new System.Drawing.Size(561, 71);
+            this.gbHotkeys.TabIndex = 6;
+            this.gbHotkeys.TabStop = false;
+            this.gbHotkeys.Text = "Hotkeys";
+            // 
+            // lblSearchFiles
+            // 
+            this.lblSearchFiles.AutoSize = true;
+            this.lblSearchFiles.Location = new System.Drawing.Point(14, 34);
+            this.lblSearchFiles.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblSearchFiles.Name = "lblSearchFiles";
+            this.lblSearchFiles.Size = new System.Drawing.Size(64, 20);
+            this.lblSearchFiles.TabIndex = 11;
+            this.lblSearchFiles.Text = "Search:";
+            // 
+            // hkSearchFiles
+            // 
+            this.hkSearchFiles.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.hkSearchFiles.Hotkey = System.Windows.Forms.Keys.None;
+            this.hkSearchFiles.HotkeyModifiers = System.Windows.Forms.Keys.None;
+            this.hkSearchFiles.Location = new System.Drawing.Point(129, 29);
+            this.hkSearchFiles.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.hkSearchFiles.Name = "hkSearchFiles";
+            this.hkSearchFiles.Size = new System.Drawing.Size(421, 26);
+            this.hkSearchFiles.TabIndex = 10;
+            this.hkSearchFiles.Text = "None";
+            // 
+            // gbEditor
+            // 
+            this.gbEditor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbEditor.Controls.Add(this.cmdBrowseForEditor);
+            this.gbEditor.Controls.Add(this.txtEditorLocation);
+            this.gbEditor.Controls.Add(this.label1);
+            this.gbEditor.Controls.Add(this.cbTextEditor);
+            this.gbEditor.Location = new System.Drawing.Point(4, 12);
+            this.gbEditor.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.gbEditor.Name = "gbEditor";
+            this.gbEditor.Padding = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.gbEditor.Size = new System.Drawing.Size(561, 112);
+            this.gbEditor.TabIndex = 5;
+            this.gbEditor.TabStop = false;
+            this.gbEditor.Text = "Text Editor";
+            // 
+            // cmdBrowseForEditor
+            // 
+            this.cmdBrowseForEditor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.cmdBrowseForEditor.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.cmdBrowseForEditor.Location = new System.Drawing.Point(500, 69);
+            this.cmdBrowseForEditor.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.cmdBrowseForEditor.Name = "cmdBrowseForEditor";
+            this.cmdBrowseForEditor.Size = new System.Drawing.Size(53, 34);
+            this.cmdBrowseForEditor.TabIndex = 3;
+            this.cmdBrowseForEditor.Text = "…";
+            this.cmdBrowseForEditor.UseVisualStyleBackColor = true;
+            this.cmdBrowseForEditor.Click += new System.EventHandler(this.cmdBrowseForEditor_Click);
+            // 
+            // txtEditorLocation
+            // 
+            this.txtEditorLocation.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.txtEditorLocation.Location = new System.Drawing.Point(99, 71);
+            this.txtEditorLocation.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.txtEditorLocation.Name = "txtEditorLocation";
+            this.txtEditorLocation.Size = new System.Drawing.Size(390, 26);
+            this.txtEditorLocation.TabIndex = 2;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(14, 75);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(74, 20);
+            this.label1.TabIndex = 1;
+            this.label1.Text = "Location:";
+            // 
+            // cbTextEditor
+            // 
+            this.cbTextEditor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.cbTextEditor.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbTextEditor.FormattingEnabled = true;
+            this.cbTextEditor.Location = new System.Drawing.Point(9, 29);
+            this.cbTextEditor.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
+            this.cbTextEditor.Name = "cbTextEditor";
+            this.cbTextEditor.Size = new System.Drawing.Size(541, 28);
+            this.cbTextEditor.TabIndex = 0;
+            this.cbTextEditor.SelectedIndexChanged += new System.EventHandler(this.cbTextEditor_SelectedIndexChanged);
             // 
             // colFolderPath
             // 
@@ -279,163 +420,24 @@
             // colExcludeFolder
             // 
             this.colExcludeFolder.AutoSizeMode = System.Windows.Forms.DataGridViewAutoSizeColumnMode.DisplayedCells;
+            this.colExcludeFolder.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.colExcludeFolder.HeaderText = "Exclude";
             this.colExcludeFolder.Name = "colExcludeFolder";
-            this.colExcludeFolder.Width = 63;
-            // 
-            // cmdAddFolder
-            // 
-            this.cmdAddFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdAddFolder.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cmdAddFolder.Location = new System.Drawing.Point(248, 121);
-            this.cmdAddFolder.Margin = new System.Windows.Forms.Padding(4);
-            this.cmdAddFolder.Name = "cmdAddFolder";
-            this.cmdAddFolder.Size = new System.Drawing.Size(120, 31);
-            this.cmdAddFolder.TabIndex = 5;
-            this.cmdAddFolder.Text = "Add...";
-            this.cmdAddFolder.UseVisualStyleBackColor = true;
-            this.cmdAddFolder.Click += new System.EventHandler(this.cmdAddFolder_Click);
-            // 
-            // cmdRemoveFolder
-            // 
-            this.cmdRemoveFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdRemoveFolder.Enabled = false;
-            this.cmdRemoveFolder.Location = new System.Drawing.Point(371, 121);
-            this.cmdRemoveFolder.Margin = new System.Windows.Forms.Padding(4);
-            this.cmdRemoveFolder.Name = "cmdRemoveFolder";
-            this.cmdRemoveFolder.Size = new System.Drawing.Size(120, 31);
-            this.cmdRemoveFolder.TabIndex = 4;
-            this.cmdRemoveFolder.Text = "Remove";
-            this.cmdRemoveFolder.UseVisualStyleBackColor = true;
-            this.cmdRemoveFolder.Click += new System.EventHandler(this.cmdRemoveFolder_Click);
-            // 
-            // tabUI
-            // 
-            this.tabUI.Controls.Add(this.gbHotkeys);
-            this.tabUI.Controls.Add(this.gbEditor);
-            this.tabUI.Location = new System.Drawing.Point(4, 25);
-            this.tabUI.Margin = new System.Windows.Forms.Padding(4);
-            this.tabUI.Name = "tabUI";
-            this.tabUI.Padding = new System.Windows.Forms.Padding(4);
-            this.tabUI.Size = new System.Drawing.Size(509, 446);
-            this.tabUI.TabIndex = 1;
-            this.tabUI.Text = "UI";
-            this.tabUI.UseVisualStyleBackColor = true;
-            // 
-            // gbHotkeys
-            // 
-            this.gbHotkeys.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.gbHotkeys.Controls.Add(this.lblSearchFiles);
-            this.gbHotkeys.Controls.Add(this.hkSearchFiles);
-            this.gbHotkeys.Location = new System.Drawing.Point(4, 107);
-            this.gbHotkeys.Margin = new System.Windows.Forms.Padding(4);
-            this.gbHotkeys.Name = "gbHotkeys";
-            this.gbHotkeys.Padding = new System.Windows.Forms.Padding(4);
-            this.gbHotkeys.Size = new System.Drawing.Size(499, 57);
-            this.gbHotkeys.TabIndex = 6;
-            this.gbHotkeys.TabStop = false;
-            this.gbHotkeys.Text = "Hotkeys";
-            // 
-            // lblSearchFiles
-            // 
-            this.lblSearchFiles.AutoSize = true;
-            this.lblSearchFiles.Location = new System.Drawing.Point(12, 27);
-            this.lblSearchFiles.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.lblSearchFiles.Name = "lblSearchFiles";
-            this.lblSearchFiles.Size = new System.Drawing.Size(57, 17);
-            this.lblSearchFiles.TabIndex = 11;
-            this.lblSearchFiles.Text = "Search:";
-            // 
-            // hkSearchFiles
-            // 
-            this.hkSearchFiles.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.hkSearchFiles.Hotkey = System.Windows.Forms.Keys.None;
-            this.hkSearchFiles.HotkeyModifiers = System.Windows.Forms.Keys.None;
-            this.hkSearchFiles.Location = new System.Drawing.Point(115, 23);
-            this.hkSearchFiles.Margin = new System.Windows.Forms.Padding(4);
-            this.hkSearchFiles.Name = "hkSearchFiles";
-            this.hkSearchFiles.Size = new System.Drawing.Size(375, 22);
-            this.hkSearchFiles.TabIndex = 10;
-            this.hkSearchFiles.Text = "None";
-            // 
-            // gbEditor
-            // 
-            this.gbEditor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.gbEditor.Controls.Add(this.cmdBrowseForEditor);
-            this.gbEditor.Controls.Add(this.txtEditorLocation);
-            this.gbEditor.Controls.Add(this.label1);
-            this.gbEditor.Controls.Add(this.cbTextEditor);
-            this.gbEditor.Location = new System.Drawing.Point(4, 10);
-            this.gbEditor.Margin = new System.Windows.Forms.Padding(4);
-            this.gbEditor.Name = "gbEditor";
-            this.gbEditor.Padding = new System.Windows.Forms.Padding(4);
-            this.gbEditor.Size = new System.Drawing.Size(499, 90);
-            this.gbEditor.TabIndex = 5;
-            this.gbEditor.TabStop = false;
-            this.gbEditor.Text = "Text Editor";
-            // 
-            // cmdBrowseForEditor
-            // 
-            this.cmdBrowseForEditor.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.cmdBrowseForEditor.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.cmdBrowseForEditor.Location = new System.Drawing.Point(444, 55);
-            this.cmdBrowseForEditor.Margin = new System.Windows.Forms.Padding(4);
-            this.cmdBrowseForEditor.Name = "cmdBrowseForEditor";
-            this.cmdBrowseForEditor.Size = new System.Drawing.Size(47, 27);
-            this.cmdBrowseForEditor.TabIndex = 3;
-            this.cmdBrowseForEditor.Text = "…";
-            this.cmdBrowseForEditor.UseVisualStyleBackColor = true;
-            this.cmdBrowseForEditor.Click += new System.EventHandler(this.cmdBrowseForEditor_Click);
-            // 
-            // txtEditorLocation
-            // 
-            this.txtEditorLocation.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.txtEditorLocation.Location = new System.Drawing.Point(88, 57);
-            this.txtEditorLocation.Margin = new System.Windows.Forms.Padding(4);
-            this.txtEditorLocation.Name = "txtEditorLocation";
-            this.txtEditorLocation.Size = new System.Drawing.Size(347, 22);
-            this.txtEditorLocation.TabIndex = 2;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 60);
-            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(66, 17);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Location:";
-            // 
-            // cbTextEditor
-            // 
-            this.cbTextEditor.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
-                        | System.Windows.Forms.AnchorStyles.Right)));
-            this.cbTextEditor.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.cbTextEditor.FormattingEnabled = true;
-            this.cbTextEditor.Location = new System.Drawing.Point(8, 23);
-            this.cbTextEditor.Margin = new System.Windows.Forms.Padding(4);
-            this.cbTextEditor.Name = "cbTextEditor";
-            this.cbTextEditor.Size = new System.Drawing.Size(481, 24);
-            this.cbTextEditor.TabIndex = 0;
-            this.cbTextEditor.SelectedIndexChanged += new System.EventHandler(this.cbTextEditor_SelectedIndexChanged);
+            this.colExcludeFolder.Width = 69;
             // 
             // ConfigurationDialog
             // 
             this.AcceptButton = this.cmdOK;
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.cmdCancel;
-            this.ClientSize = new System.Drawing.Size(525, 518);
+            this.ClientSize = new System.Drawing.Size(591, 648);
             this.Controls.Add(this.cmdOK);
             this.Controls.Add(this.cmdCancel);
             this.Controls.Add(this.tcTabs);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(4);
+            this.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ConfigurationDialog";
