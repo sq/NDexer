@@ -182,6 +182,12 @@ namespace Ndexer {
                 }
             );
             ContextMenu.Items.Add(
+                "Res&can", null,
+                (e, s) => {
+                    Scheduler.Start(ScanFiles(), TaskExecutionPolicy.RunAsBackgroundTask);
+                }
+            );
+            ContextMenu.Items.Add(
                 "&Rebuild Index", null,
                 (e, s) => {
                     Scheduler.Start(ConfirmRebuildIndexTask(), TaskExecutionPolicy.RunAsBackgroundTask);
