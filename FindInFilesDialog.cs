@@ -157,7 +157,7 @@ namespace Ndexer {
         }
 
         IEnumerator<object> SearchInFiles (SearchQuery search, BlockingQueue<string> filenames, IFuture completionFuture) {
-            var searchedFiles = new List<string>();
+            var searchedFiles = new HashSet<string>(StringComparer.Ordinal);
             var buffer = new List<SearchResult>();
             var sb = new StringBuilder();
 
@@ -242,14 +242,17 @@ namespace Ndexer {
                     }
                 }
 
+                // Opening files is slow over network shares.
                 FileDataAdapter adapter = null;
-                try {
-                    adapter = new FileDataAdapter(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read);
-                } catch {
-                    if (adapter != null)
-                        adapter.Dispose();
+                var fAdapter = Future.RunInThread(
+                    () => new FileDataAdapter(filename, System.IO.FileMode.Open, System.IO.FileAccess.Read)
+                );
+                yield return fAdapter;
+                if (fAdapter.Failed)
                     continue;
-                }
+                else
+                    adapter = fAdapter.Result;
+
                 using (adapter) {
                     var fEncoding = Future.RunInThread(
                         () => DetectEncoding(adapter.BaseStream)
