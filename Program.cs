@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using Squared.Threading;
 
 namespace Ndexer {
     public class ActiveWorker : IDisposable {

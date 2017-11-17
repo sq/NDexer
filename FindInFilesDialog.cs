@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using Squared.Task.IO;
 using System.Reflection;
 using Squared.Task.Data.Mapper;
+using Squared.Threading;
 
 namespace Ndexer {
 #if !MONO

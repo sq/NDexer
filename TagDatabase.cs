@@ -7,6 +7,7 @@ using Squared.Task;
 using System.Data;
 using Squared.Task.Data;
 using Squared.Util;
+using Squared.Threading;
 
 namespace Ndexer {
     public class TagDatabase {

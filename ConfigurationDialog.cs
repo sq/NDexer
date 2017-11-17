@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using exscape;
 using Squared.Task.Data;
+using Squared.Threading;
 
 namespace Ndexer {
 #if !MONO

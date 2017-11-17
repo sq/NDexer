@@ -8,6 +8,8 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.IO;
 
+using IFuture = Squared.Threading.IFuture;
+
 namespace Ndexer {
 #if !MONO
     public class SciTENotRunningException : Exception {
